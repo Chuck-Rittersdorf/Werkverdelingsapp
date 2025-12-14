@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    WERKVERDELINGSAPP - JavaScript Application
    ============================================ */
 
@@ -181,7 +181,7 @@ function initBasisweken() {
                 if (!vakFormCard.querySelector('.disabled-overlay')) {
                     const overlay = document.createElement('div');
                     overlay.className = 'disabled-overlay';
-                    overlay.innerHTML = '<p>⚠️ Sla eerst de basisweken op</p>';
+                    overlay.innerHTML = '<p>⚠️ Stel eerst de basisweken in</p>';
                     vakFormCard.appendChild(overlay);
                 }
             }
@@ -240,18 +240,77 @@ function initCurriculumForm() {
     const form = document.getElementById('form-vak');
     const basiswekenInputs = document.getElementById('basisweken-inputs');
     const ontwikkelwekenInputs = document.getElementById('ontwikkelweken-inputs');
-    const vakTypeRadios = document.querySelectorAll('input[name="vak-type"]');
+    const vakTypeToggle = document.getElementById('vak-type-toggle');
+    const vakTypeValue = document.getElementById('vak-type-value');
+    const toggleLabels = document.querySelectorAll('.toggle-label');
+    const eenhedenLabel = document.getElementById('eenheden-label');
 
-    // Toggle between basisweken and ontwikkelweken inputs
-    vakTypeRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            if (radio.value === 'basisweken') {
-                basiswekenInputs.style.display = '';
-                ontwikkelwekenInputs.style.display = 'none';
-            } else {
-                basiswekenInputs.style.display = 'none';
-                ontwikkelwekenInputs.style.display = '';
-            }
+    // Function to update toggle state
+    function updateToggleState(isOntwikkelweken) {
+        if (isOntwikkelweken) {
+            basiswekenInputs.style.display = 'none';
+            ontwikkelwekenInputs.style.display = '';
+            vakTypeValue.value = 'ontwikkelweken';
+            toggleLabels[0].classList.remove('active');
+            toggleLabels[1].classList.add('active');
+            if (eenhedenLabel) eenhedenLabel.textContent = 'Aantal eenheden per ontwikkelweek';
+        } else {
+            basiswekenInputs.style.display = '';
+            ontwikkelwekenInputs.style.display = 'none';
+            vakTypeValue.value = 'basisweken';
+            toggleLabels[0].classList.add('active');
+            toggleLabels[1].classList.remove('active');
+            if (eenhedenLabel) eenhedenLabel.textContent = 'Aantal eenheden per basisweek';
+        }
+    }
+
+    // Toggle switch change handler
+    if (vakTypeToggle) {
+        vakTypeToggle.addEventListener('change', () => {
+            updateToggleState(vakTypeToggle.checked);
+        });
+    }
+
+    // Clickable labels
+    toggleLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const isOntwikkelweken = label.dataset.value === 'ontwikkelweken';
+            vakTypeToggle.checked = isOntwikkelweken;
+            updateToggleState(isOntwikkelweken);
+        });
+    });
+
+    // Splitsbaar toggle handling
+    const splitsbaarToggle = document.getElementById('vak-splitsbaar-toggle');
+    const splitsbaarValue = document.getElementById('vak-splitsbaar-value');
+    const splitsbaarLabels = document.querySelectorAll('.splitsbaar-label');
+    const splitsbaarHint = document.getElementById('splitsbaar-hint');
+
+    function updateSplitsbaarState(isNietSplitsbaar) {
+        if (isNietSplitsbaar) {
+            splitsbaarValue.value = 'false';
+            splitsbaarLabels[0].classList.remove('active');
+            splitsbaarLabels[1].classList.add('active');
+            if (splitsbaarHint) splitsbaarHint.textContent = 'Docenten kunnen alleen alle eenheden tegelijk selecteren';
+        } else {
+            splitsbaarValue.value = 'true';
+            splitsbaarLabels[0].classList.add('active');
+            splitsbaarLabels[1].classList.remove('active');
+            if (splitsbaarHint) splitsbaarHint.textContent = 'Docenten kunnen eenheden selecteren';
+        }
+    }
+
+    if (splitsbaarToggle) {
+        splitsbaarToggle.addEventListener('change', () => {
+            updateSplitsbaarState(splitsbaarToggle.checked);
+        });
+    }
+
+    splitsbaarLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const isNietSplitsbaar = label.dataset.value === 'niet-splitsbaar';
+            splitsbaarToggle.checked = isNietSplitsbaar;
+            updateSplitsbaarState(isNietSplitsbaar);
         });
     });
 
@@ -266,7 +325,7 @@ function initCurriculumForm() {
             return;
         }
 
-        const vakType = document.querySelector('input[name="vak-type"]:checked').value;
+        const vakType = document.getElementById('vak-type-value').value;
 
         const vak = {
             id: generateId(),
@@ -275,7 +334,7 @@ function initCurriculumForm() {
             naam: document.getElementById('vak-naam').value.trim(),
             kleur: document.getElementById('vak-kleur').value,
             klassen: leerjaar.klassen,
-            splitsbaar: document.getElementById('vak-splitsbaar').checked,
+            splitsbaar: document.getElementById('vak-splitsbaar-value').value === 'true',
             opslagfactor: parseInt(document.getElementById('vak-opslagfactor').value) || 40
         };
 
@@ -304,12 +363,16 @@ function initCurriculumForm() {
         renderVakkenLijst();
         form.reset();
         document.getElementById('vak-kleur').value = getRandomColor();
-        document.getElementById('vak-splitsbaar').checked = true;
+        // Reset splitsbaar toggle
+        document.getElementById('vak-splitsbaar-value').value = 'true';
+        document.getElementById('vak-splitsbaar-toggle').checked = false;
+        updateSplitsbaarState(false);
         document.getElementById('vak-opslagfactor').value = 40;
         // Reset to basisweken view
         basiswekenInputs.style.display = '';
         ontwikkelwekenInputs.style.display = 'none';
-        document.querySelector('input[name="vak-type"][value="basisweken"]').checked = true;
+        vakTypeToggle.checked = false;
+        updateToggleState(false);
     });
 
     document.querySelectorAll('.color-preset').forEach(btn => {
@@ -344,7 +407,7 @@ function setupTakenbeheer() {
                 if (!taakFormCard.querySelector('.disabled-overlay')) {
                     const overlay = document.createElement('div');
                     overlay.className = 'disabled-overlay';
-                    overlay.innerHTML = '<p>⚠️ Sla eerst de weken per periode op</p>';
+                    overlay.innerHTML = '<p>⚠️ Stel eerst de periodeweken in</p>';
                     taakFormCard.appendChild(overlay);
                 }
             }
@@ -390,14 +453,39 @@ function setupTakenbeheer() {
     const periodesContainer = document.getElementById('taak-periodes-container');
 
     if (taakForm) {
-        // Toggle periode inputs based on radio selection
-        document.querySelectorAll('input[name="taak-verdeling"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (document.querySelector('input[name="taak-verdeling"]:checked').value === 'afwijkend') {
-                    periodesContainer.style.display = '';
-                } else {
-                    periodesContainer.style.display = 'none';
-                }
+        // Toggle verdeling switch handling
+        const verdelingToggle = document.getElementById('taak-verdeling-toggle');
+        const verdelingValue = document.getElementById('taak-verdeling-value');
+        const verdelingLabels = document.querySelectorAll('.taak-verdeling-label');
+        const verdelingHint = document.getElementById('taak-verdeling-hint');
+
+        function updateVerdelingState(isAfwijkend) {
+            if (isAfwijkend) {
+                verdelingValue.value = 'afwijkend';
+                verdelingLabels[0].classList.remove('active');
+                verdelingLabels[1].classList.add('active');
+                periodesContainer.style.display = '';
+                if (verdelingHint) verdelingHint.textContent = 'Vul uren per periode handmatig in';
+            } else {
+                verdelingValue.value = 'gelijk';
+                verdelingLabels[0].classList.add('active');
+                verdelingLabels[1].classList.remove('active');
+                periodesContainer.style.display = 'none';
+                if (verdelingHint) verdelingHint.textContent = 'Uren worden gespreid over alle periodes';
+            }
+        }
+
+        if (verdelingToggle) {
+            verdelingToggle.addEventListener('change', () => {
+                updateVerdelingState(verdelingToggle.checked);
+            });
+        }
+
+        verdelingLabels.forEach(label => {
+            label.addEventListener('click', () => {
+                const isAfwijkend = label.dataset.value === 'afwijkend';
+                verdelingToggle.checked = isAfwijkend;
+                updateVerdelingState(isAfwijkend);
             });
         });
 
@@ -432,7 +520,7 @@ function setupTakenbeheer() {
         taakForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const totaalUren = parseFloat(document.getElementById('taak-totaal-uren').value) || 0;
-            const verdeling = document.querySelector('input[name="taak-verdeling"]:checked').value;
+            const verdeling = document.getElementById('taak-verdeling-value').value;
 
             let urenPerPeriode;
             if (verdeling === 'gelijk') {
@@ -468,6 +556,7 @@ function setupTakenbeheer() {
                 kleur: document.getElementById('taak-kleur').value || '#6366f1',
                 totaalUren: totaalUren,
                 urenPerPeriode: urenPerPeriode,
+                verdeling: verdeling,
                 voorIedereen: document.getElementById('taak-voor-iedereen').checked,
                 maxDocenten: document.getElementById('taak-max-docenten-check').checked
                     ? parseInt(document.getElementById('taak-max-docenten').value) || 1
@@ -519,7 +608,7 @@ function renderTakenLijst() {
                 </div>
                 <div class="vak-info">
                     <div class="vak-naam">${taak.naam}</div>
-                    <div class="vak-details">${totaalUren.toFixed(1)} uur totaal ${taak.voorIedereen ? '• 👥 Voor iedereen' : ''}</div>
+                    <div class="vak-details">${totaalUren.toFixed(1)} uur totaal ${taak.voorIedereen ? '• 👥 Voor alle teamleden' : (taak.maxDocenten ? '• ❗ Taak voor ' + taak.maxDocenten + ' teamleden' : '')}</div>
                     <div class="vak-periodes">
                         <span class="vak-periode">P1: ${taak.urenPerPeriode[1].toFixed(1)}u</span>
                         <span class="vak-periode">P2: ${taak.urenPerPeriode[2].toFixed(1)}u</span>
@@ -528,6 +617,7 @@ function renderTakenLijst() {
                     </div>
                 </div>
                 <div class="vak-actions">
+                    <button onclick="editTaak('${taak.id}')" title="Bewerken">✏️</button>
                     <button onclick="deleteTaak('${taak.id}')" title="Verwijderen">🗑️</button>
                 </div>
             </div>
@@ -542,6 +632,223 @@ function deleteTaak(taakId) {
     saveToLocalStorage();
     renderTakenLijst();
 }
+
+function editTaak(taakId) {
+    const taak = state.taken.find(t => t.id === taakId);
+    if (!taak) return;
+
+    // Fill form with taak data
+    document.getElementById('edit-taak-id').value = taak.id;
+    document.getElementById('edit-taak-naam').value = taak.naam;
+    document.getElementById('edit-taak-kleur').value = taak.kleur || '#6366f1';
+    document.getElementById('edit-taak-totaal-uren').value = (taak.totaalUren || 0).toFixed(1);
+    document.getElementById('edit-taak-voor-iedereen').checked = taak.voorIedereen;
+
+    // Max docenten
+    const hasMaxDocenten = taak.maxDocenten !== null && taak.maxDocenten !== undefined;
+    document.getElementById('edit-taak-max-docenten-check').checked = hasMaxDocenten;
+    document.getElementById('edit-taak-max-docenten-container').style.display = hasMaxDocenten ? 'block' : 'none';
+    document.getElementById('edit-taak-max-docenten').value = taak.maxDocenten || 1;
+
+    // Get stored verdeling type (default to 'gelijk' for backward compatibility)
+    const isAfwijkend = taak.verdeling === 'afwijkend';
+
+    // Set toggle state
+    document.getElementById('edit-taak-verdeling-toggle').checked = isAfwijkend;
+    document.getElementById('edit-taak-verdeling-value').value = isAfwijkend ? 'afwijkend' : 'gelijk';
+
+    // Update toggle labels
+    const editVerdelingLabels = document.querySelectorAll('.edit-taak-verdeling-label');
+    editVerdelingLabels[0].classList.toggle('active', !isAfwijkend);
+    editVerdelingLabels[1].classList.toggle('active', isAfwijkend);
+
+    // Update hint text
+    const editVerdelingHint = document.getElementById('edit-taak-verdeling-hint');
+    if (editVerdelingHint) {
+        editVerdelingHint.textContent = isAfwijkend ? 'Vul uren per periode handmatig in' : 'Uren worden gespreid over alle periodes';
+    }
+
+    // Show/hide periodes container
+    document.getElementById('edit-taak-periodes-container').style.display = isAfwijkend ? 'block' : 'none';
+
+    // Fill periode values with 1 decimal
+    document.getElementById('edit-taak-p1').value = (taak.urenPerPeriode[1] || 0).toFixed(1);
+    document.getElementById('edit-taak-p2').value = (taak.urenPerPeriode[2] || 0).toFixed(1);
+    document.getElementById('edit-taak-p3').value = (taak.urenPerPeriode[3] || 0).toFixed(1);
+    document.getElementById('edit-taak-p4').value = (taak.urenPerPeriode[4] || 0).toFixed(1);
+
+    // Show modal
+    document.getElementById('edit-taak-modal').style.display = 'flex';
+}
+
+function closeEditTaakModal() {
+    document.getElementById('edit-taak-modal').style.display = 'none';
+}
+
+function saveEditTaak() {
+    const taakId = document.getElementById('edit-taak-id').value;
+    const taak = state.taken.find(t => t.id === taakId);
+    if (!taak) return;
+
+    const totaalUren = parseFloat(document.getElementById('edit-taak-totaal-uren').value) || 0;
+    const verdeling = document.getElementById('edit-taak-verdeling-value').value;
+
+    let urenPerPeriode;
+    if (verdeling === 'gelijk') {
+        const totaalWeken = state.wekenPerPeriode[1] + state.wekenPerPeriode[2] +
+            state.wekenPerPeriode[3] + state.wekenPerPeriode[4];
+        const urenPerWeek = totaalWeken > 0 ? totaalUren / totaalWeken : 0;
+        urenPerPeriode = {
+            1: urenPerWeek * state.wekenPerPeriode[1],
+            2: urenPerWeek * state.wekenPerPeriode[2],
+            3: urenPerWeek * state.wekenPerPeriode[3],
+            4: urenPerWeek * state.wekenPerPeriode[4]
+        };
+    } else {
+        const p1 = parseFloat(document.getElementById('edit-taak-p1').value) || 0;
+        const p2 = parseFloat(document.getElementById('edit-taak-p2').value) || 0;
+        const p3 = parseFloat(document.getElementById('edit-taak-p3').value) || 0;
+        const p4 = parseFloat(document.getElementById('edit-taak-p4').value) || 0;
+        const somPeriodes = p1 + p2 + p3 + p4;
+
+        if (Math.abs(somPeriodes - totaalUren) > 0.01) {
+            alert(`De som van de periodes (${somPeriodes.toFixed(1)}) moet gelijk zijn aan het totaal (${totaalUren.toFixed(1)}).`);
+            // Reopen modal to let user fix
+            document.getElementById('edit-taak-modal').style.display = 'flex';
+            return;
+        }
+        urenPerPeriode = { 1: p1, 2: p2, 3: p3, 4: p4 };
+    }
+
+    // Update taak properties
+    taak.naam = document.getElementById('edit-taak-naam').value.trim();
+    taak.kleur = document.getElementById('edit-taak-kleur').value;
+    taak.totaalUren = totaalUren;
+    taak.urenPerPeriode = urenPerPeriode;
+    taak.verdeling = verdeling;
+    taak.voorIedereen = document.getElementById('edit-taak-voor-iedereen').checked;
+    taak.maxDocenten = document.getElementById('edit-taak-max-docenten-check').checked
+        ? parseInt(document.getElementById('edit-taak-max-docenten').value) || 1
+        : null;
+
+    saveToLocalStorage();
+    renderTakenLijst();
+}
+
+function initEditTaakForm() {
+    const form = document.getElementById('form-edit-taak');
+    if (!form) return;
+
+    // Toggle verdeling switch handling
+    const editVerdelingToggle = document.getElementById('edit-taak-verdeling-toggle');
+    const editVerdelingValue = document.getElementById('edit-taak-verdeling-value');
+    const editVerdelingLabels = document.querySelectorAll('.edit-taak-verdeling-label');
+    const editVerdelingHint = document.getElementById('edit-taak-verdeling-hint');
+    const editPeriodesContainer = document.getElementById('edit-taak-periodes-container');
+
+    function updateEditTaakVerdelingState(isAfwijkend) {
+        if (isAfwijkend) {
+            editVerdelingValue.value = 'afwijkend';
+            editVerdelingLabels[0].classList.remove('active');
+            editVerdelingLabels[1].classList.add('active');
+            editPeriodesContainer.style.display = 'block';
+            if (editVerdelingHint) editVerdelingHint.textContent = 'Vul uren per periode handmatig in';
+        } else {
+            editVerdelingValue.value = 'gelijk';
+            editVerdelingLabels[0].classList.add('active');
+            editVerdelingLabels[1].classList.remove('active');
+            editPeriodesContainer.style.display = 'none';
+            if (editVerdelingHint) editVerdelingHint.textContent = 'Uren worden gespreid over alle periodes';
+        }
+    }
+
+    if (editVerdelingToggle) {
+        editVerdelingToggle.addEventListener('change', () => {
+            updateEditTaakVerdelingState(editVerdelingToggle.checked);
+        });
+    }
+
+    editVerdelingLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const isAfwijkend = label.dataset.value === 'afwijkend';
+            editVerdelingToggle.checked = isAfwijkend;
+            updateEditTaakVerdelingState(isAfwijkend);
+        });
+    });
+
+    // Mutual exclusivity: voor iedereen <-> max docenten
+    const voorIedereenCheck = document.getElementById('edit-taak-voor-iedereen');
+    const maxDocentenCheck = document.getElementById('edit-taak-max-docenten-check');
+    const maxDocentenContainer = document.getElementById('edit-taak-max-docenten-container');
+
+    voorIedereenCheck.addEventListener('change', () => {
+        if (voorIedereenCheck.checked) {
+            maxDocentenCheck.checked = false;
+            maxDocentenContainer.style.display = 'none';
+        }
+    });
+
+    maxDocentenCheck.addEventListener('change', () => {
+        if (maxDocentenCheck.checked) {
+            voorIedereenCheck.checked = false;
+            maxDocentenContainer.style.display = 'block';
+        } else {
+            maxDocentenContainer.style.display = 'none';
+        }
+    });
+
+    // Form submit handler
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const taakId = document.getElementById('edit-taak-id').value;
+        const taak = state.taken.find(t => t.id === taakId);
+        if (!taak) return;
+
+        const totaalUren = parseFloat(document.getElementById('edit-taak-totaal-uren').value) || 0;
+        const verdeling = document.querySelector('input[name="edit-taak-verdeling"]:checked').value;
+
+        let urenPerPeriode;
+        if (verdeling === 'gelijk') {
+            const totaalWeken = state.wekenPerPeriode[1] + state.wekenPerPeriode[2] +
+                state.wekenPerPeriode[3] + state.wekenPerPeriode[4];
+            const urenPerWeek = totaalWeken > 0 ? totaalUren / totaalWeken : 0;
+            urenPerPeriode = {
+                1: urenPerWeek * state.wekenPerPeriode[1],
+                2: urenPerWeek * state.wekenPerPeriode[2],
+                3: urenPerWeek * state.wekenPerPeriode[3],
+                4: urenPerWeek * state.wekenPerPeriode[4]
+            };
+        } else {
+            const p1 = parseFloat(document.getElementById('edit-taak-p1').value) || 0;
+            const p2 = parseFloat(document.getElementById('edit-taak-p2').value) || 0;
+            const p3 = parseFloat(document.getElementById('edit-taak-p3').value) || 0;
+            const p4 = parseFloat(document.getElementById('edit-taak-p4').value) || 0;
+            const somPeriodes = p1 + p2 + p3 + p4;
+
+            if (Math.abs(somPeriodes - totaalUren) > 0.01) {
+                alert(`De som van de periodes (${somPeriodes.toFixed(1)}) moet gelijk zijn aan het totaal (${totaalUren.toFixed(1)}).`);
+                return;
+            }
+            urenPerPeriode = { 1: p1, 2: p2, 3: p3, 4: p4 };
+        }
+
+        // Update taak properties
+        taak.naam = document.getElementById('edit-taak-naam').value.trim();
+        taak.kleur = document.getElementById('edit-taak-kleur').value;
+        taak.totaalUren = totaalUren;
+        taak.urenPerPeriode = urenPerPeriode;
+        taak.voorIedereen = document.getElementById('edit-taak-voor-iedereen').checked;
+        taak.maxDocenten = document.getElementById('edit-taak-max-docenten-check').checked
+            ? parseInt(document.getElementById('edit-taak-max-docenten').value) || 1
+            : null;
+
+        saveToLocalStorage();
+        renderTakenLijst();
+        closeEditTaakModal();
+    });
+}
+
 
 function renderVakkenLijst() {
     const container = document.getElementById('vakken-lijst');
@@ -575,15 +882,41 @@ function renderVakkenLijst() {
         const basisVakken = vakken.filter(v => v.type !== 'ontwikkelweken');
         const owVakken = vakken.filter(v => v.type === 'ontwikkelweken');
 
+        // Calculate BOT uren voor basisweken: eenheden × 0.5 × weken per periode
+        let basisBOT = 0;
+        basisVakken.forEach(vak => {
+            if (vak.periodes) {
+                for (let p = 1; p <= 4; p++) {
+                    const eenheden = vak.periodes[p] || 0;
+                    const weken = state.basisweken[p] || 8;
+                    basisBOT += eenheden * 0.5 * weken;
+                }
+            }
+        });
+
+        // Calculate BOT uren voor ontwikkelweken: eenheden × 0.5
+        let owBOT = 0;
+        owVakken.forEach(vak => {
+            if (vak.ontwikkelweken) {
+                for (let ow = 1; ow <= 8; ow++) {
+                    const eenheden = vak.ontwikkelweken[ow] || 0;
+                    owBOT += eenheden * 0.5;
+                }
+            }
+        });
+
+        const totalBOT = basisBOT + owBOT;
+        const aantalKlassen = leerjaar ? leerjaar.klassen.length : 0;
+
         return `
             <div class="leerjaar-group">
                 <div class="leerjaar-group-header">
                     <h4>🎓 Jaar ${nummer}</h4>
-                    <span>${leerjaar ? leerjaar.klassen.length : '?'} klassen • ${basisVakken.length} basis • ${owVakken.length} OW vakken</span>
+                    <span>Per klas: ${basisBOT.toFixed(1)} uren BOT in basisweken + ${owBOT.toFixed(1)} uren BOT in ontwikkelweken = ${totalBOT.toFixed(1)} BOT totaal (klokuren)</span>
                 </div>
-                ${basisVakken.length > 0 ? `<div class="vak-type-label">📚 Basisweken</div>` : ''}
+                ${basisVakken.length > 0 ? `<div class="vak-type-label">Basisweken</div>` : ''}
                 ${basisVakken.map(vak => renderVakItem(vak)).join('')}
-                ${owVakken.length > 0 ? `<div class="vak-type-label">🔧 Ontwikkelweken</div>` : ''}
+                ${owVakken.length > 0 ? `<div class="vak-type-label">Ontwikkelweken</div>` : ''}
                 ${owVakken.map(vak => renderVakItem(vak)).join('')}
             </div>
         `;
@@ -594,42 +927,49 @@ function renderVakkenLijst() {
 
 function renderVakItem(vak) {
     const klassen = vak.klassen || [];
+    const opslagfactor = vak.opslagfactor || 40;
+    const splitsbaar = vak.splitsbaar !== false;
     let periodeInfo = '';
-    let totalBlokjes = 0;
 
     if (vak.type === 'ontwikkelweken' && vak.ontwikkelweken) {
         const ow = vak.ontwikkelweken;
-        totalBlokjes = klassen.length * ((ow[1] || 0) + (ow[2] || 0) + (ow[3] || 0) + (ow[4] || 0) + (ow[5] || 0) + (ow[6] || 0) + (ow[7] || 0) + (ow[8] || 0));
-        periodeInfo = `
-            <span class="vak-periode">OW1: ${ow[1] || 0}</span>
-            <span class="vak-periode">OW2: ${ow[2] || 0}</span>
-            <span class="vak-periode">OW3: ${ow[3] || 0}</span>
-            <span class="vak-periode">OW4: ${ow[4] || 0}</span>
-            <span class="vak-periode">OW5: ${ow[5] || 0}</span>
-            <span class="vak-periode">OW6: ${ow[6] || 0}</span>
-            <span class="vak-periode">OW7: ${ow[7] || 0}</span>
-            <span class="vak-periode">OW8: ${ow[8] || 0}</span>
-        `;
+        periodeInfo = '';
+        for (let i = 1; i <= 8; i++) {
+            const eenheden = ow[i] || 0;
+            const klokuren = (eenheden * 0.5).toFixed(1);
+            periodeInfo += `<span class="vak-periode">OW${i}: ${eenheden} eenheden = ${klokuren} klokuren</span>`;
+        }
     } else if (vak.periodes) {
         const p = vak.periodes;
-        totalBlokjes = klassen.length * ((p[1] || 0) + (p[2] || 0) + (p[3] || 0) + (p[4] || 0));
-        periodeInfo = `
-            <span class="vak-periode">P1: ${p[1] || 0}</span>
-            <span class="vak-periode">P2: ${p[2] || 0}</span>
-            <span class="vak-periode">P3: ${p[3] || 0}</span>
-            <span class="vak-periode">P4: ${p[4] || 0}</span>
-        `;
+        periodeInfo = '';
+        for (let i = 1; i <= 4; i++) {
+            const eenhedenPerWeek = p[i] || 0;
+            const klokurenPerWeek = (eenhedenPerWeek * 0.5).toFixed(1);
+            periodeInfo += `<span class="vak-periode">P${i}: ${eenhedenPerWeek} eenheden = ${klokurenPerWeek} klokuren per week</span>`;
+        }
     }
 
+    // Format class codes
+    const klassenText = klassen.length > 0 ? klassen.join(', ') : 'Geen klassen';
+
     return `
-        <div class="vak-item" style="border-left-color: ${vak.kleur}">
+        <div class="vak-item vak-item-expanded" style="border-left-color: ${vak.kleur}">
             <div class="vak-color" style="background: ${vak.kleur}"></div>
             <div class="vak-info">
                 <div class="vak-naam">${escapeHtml(vak.naam)}</div>
-                <div class="vak-details">${klassen.length} klassen • ${totalBlokjes} blokjes</div>
+                <div class="vak-klassen-row">
+                    <span class="vak-klassen-label">Klassen:</span>
+                    <span class="vak-klassen-codes leerjaar-badge-style">${klassenText}</span>
+                </div>
                 <div class="vak-periodes">${periodeInfo}</div>
+                <div class="vak-meta-row">
+                    <span class="vak-meta">VZNZ: ${opslagfactor}%</span>
+                    <span class="vak-meta">${splitsbaar ? '✂️ Splitsbaar' : '🔒 Niet splitsbaar'}</span>
+                    <span class="vak-meta">${vak.type === 'ontwikkelweken' ? '📅 Ontwikkelweken' : '📅 Basisweken'}</span>
+                </div>
             </div>
             <div class="vak-actions">
+                <button onclick="editVak('${vak.id}')" title="Bewerken">✏️</button>
                 <button onclick="deleteVak('${vak.id}')" title="Verwijderen">🗑️</button>
             </div>
         </div>
@@ -643,6 +983,260 @@ function deleteVak(vakId) {
     saveToLocalStorage();
     renderVakkenLijst();
 }
+
+function editVak(vakId) {
+    const vak = state.vakken.find(v => v.id === vakId);
+    if (!vak) return;
+
+    // Fill form with vak data
+    document.getElementById('edit-vak-id').value = vak.id;
+    document.getElementById('edit-vak-naam').value = vak.naam;
+    document.getElementById('edit-vak-kleur').value = vak.kleur || '#6366f1';
+    document.getElementById('edit-vak-opslagfactor').value = vak.opslagfactor || 40;
+
+    // Display klassen in header
+    const klassenDisplay = document.getElementById('edit-vak-klassen-display');
+    if (klassenDisplay) {
+        const klassen = vak.klassen || [];
+        klassenDisplay.textContent = klassen.length > 0 ? klassen.join(', ') : 'Geen klassen';
+    }
+
+    // Set type toggle
+    const type = vak.type || 'basisweken';
+    const isOntwikkelweken = type === 'ontwikkelweken';
+    document.getElementById('edit-vak-type-toggle').checked = isOntwikkelweken;
+    document.getElementById('edit-vak-type-value').value = type;
+
+    // Update type toggle labels
+    const typeLabels = document.querySelectorAll('.edit-vak-type-label');
+    typeLabels[0].classList.toggle('active', !isOntwikkelweken);
+    typeLabels[1].classList.toggle('active', isOntwikkelweken);
+
+    // Update type hint
+    const eenhedenLabel = document.getElementById('edit-eenheden-label');
+    if (eenhedenLabel) {
+        eenhedenLabel.textContent = isOntwikkelweken ? 'Aantal eenheden per ontwikkelweek' : 'Aantal eenheden per basisweek';
+    }
+
+    // Set splitsbaar toggle
+    const isSplitsbaar = vak.splitsbaar !== false;
+    document.getElementById('edit-vak-splitsbaar-toggle').checked = !isSplitsbaar;
+    document.getElementById('edit-vak-splitsbaar-value').value = isSplitsbaar ? 'true' : 'false';
+
+    // Update splitsbaar toggle labels
+    const splitsbaarLabels = document.querySelectorAll('.edit-splitsbaar-label');
+    splitsbaarLabels[0].classList.toggle('active', isSplitsbaar);
+    splitsbaarLabels[1].classList.toggle('active', !isSplitsbaar);
+
+    // Update splitsbaar hint
+    const splitsbaarHint = document.getElementById('edit-splitsbaar-hint');
+    if (splitsbaarHint) {
+        splitsbaarHint.textContent = isSplitsbaar ? 'Docenten kunnen eenheden selecteren' : 'Docenten kunnen alleen alle eenheden tegelijk selecteren';
+    }
+
+    // Show/hide containers based on type
+    const periodesContainer = document.getElementById('edit-periodes-container');
+    const owContainer = document.getElementById('edit-ow-container');
+    if (isOntwikkelweken) {
+        periodesContainer.style.display = 'none';
+        owContainer.style.display = 'block';
+    } else {
+        periodesContainer.style.display = 'block';
+        owContainer.style.display = 'none';
+    }
+
+    // Fill periode values
+    if (vak.periodes) {
+        document.getElementById('edit-vak-p1').value = vak.periodes[1] || 0;
+        document.getElementById('edit-vak-p2').value = vak.periodes[2] || 0;
+        document.getElementById('edit-vak-p3').value = vak.periodes[3] || 0;
+        document.getElementById('edit-vak-p4').value = vak.periodes[4] || 0;
+    }
+
+    // Fill OW values
+    if (vak.ontwikkelweken) {
+        for (let i = 1; i <= 8; i++) {
+            document.getElementById(`edit-vak-ow${i}`).value = vak.ontwikkelweken[i] || 0;
+        }
+    }
+
+    // Show modal
+    document.getElementById('edit-vak-modal').style.display = 'flex';
+}
+
+function closeEditVakModal() {
+    document.getElementById('edit-vak-modal').style.display = 'none';
+}
+
+function saveEditVak() {
+    const vakId = document.getElementById('edit-vak-id').value;
+    const vak = state.vakken.find(v => v.id === vakId);
+    if (!vak) {
+        closeEditVakModal();
+        return;
+    }
+
+    const type = document.getElementById('edit-vak-type-value').value;
+
+    // Update vak properties
+    vak.naam = document.getElementById('edit-vak-naam').value.trim();
+    vak.kleur = document.getElementById('edit-vak-kleur').value;
+    vak.opslagfactor = parseInt(document.getElementById('edit-vak-opslagfactor').value) || 40;
+    vak.splitsbaar = document.getElementById('edit-vak-splitsbaar-value').value === 'true';
+    vak.type = type;
+
+    if (type === 'ontwikkelweken') {
+        vak.ontwikkelweken = {
+            1: parseInt(document.getElementById('edit-vak-ow1').value) || 0,
+            2: parseInt(document.getElementById('edit-vak-ow2').value) || 0,
+            3: parseInt(document.getElementById('edit-vak-ow3').value) || 0,
+            4: parseInt(document.getElementById('edit-vak-ow4').value) || 0,
+            5: parseInt(document.getElementById('edit-vak-ow5').value) || 0,
+            6: parseInt(document.getElementById('edit-vak-ow6').value) || 0,
+            7: parseInt(document.getElementById('edit-vak-ow7').value) || 0,
+            8: parseInt(document.getElementById('edit-vak-ow8').value) || 0
+        };
+        vak.periodes = null;
+    } else {
+        vak.periodes = {
+            1: parseInt(document.getElementById('edit-vak-p1').value) || 0,
+            2: parseInt(document.getElementById('edit-vak-p2').value) || 0,
+            3: parseInt(document.getElementById('edit-vak-p3').value) || 0,
+            4: parseInt(document.getElementById('edit-vak-p4').value) || 0
+        };
+        vak.ontwikkelweken = null;
+    }
+
+    saveToLocalStorage();
+    renderVakkenLijst();
+    closeEditVakModal();
+}
+
+function initEditVakForm() {
+    const form = document.getElementById('form-edit-vak');
+    if (!form) return;
+
+    const periodesContainer = document.getElementById('edit-periodes-container');
+    const owContainer = document.getElementById('edit-ow-container');
+
+    // Type toggle handling
+    const typeToggle = document.getElementById('edit-vak-type-toggle');
+    const typeValue = document.getElementById('edit-vak-type-value');
+    const typeLabels = document.querySelectorAll('.edit-vak-type-label');
+    const eenhedenLabel = document.getElementById('edit-eenheden-label');
+
+    function updateEditTypeState(isOntwikkelweken) {
+        if (isOntwikkelweken) {
+            typeValue.value = 'ontwikkelweken';
+            typeLabels[0].classList.remove('active');
+            typeLabels[1].classList.add('active');
+            periodesContainer.style.display = 'none';
+            owContainer.style.display = 'block';
+            if (eenhedenLabel) eenhedenLabel.textContent = 'Aantal eenheden per ontwikkelweek';
+        } else {
+            typeValue.value = 'basisweken';
+            typeLabels[0].classList.add('active');
+            typeLabels[1].classList.remove('active');
+            periodesContainer.style.display = 'block';
+            owContainer.style.display = 'none';
+            if (eenhedenLabel) eenhedenLabel.textContent = 'Aantal eenheden per basisweek';
+        }
+    }
+
+    if (typeToggle) {
+        typeToggle.addEventListener('change', () => {
+            updateEditTypeState(typeToggle.checked);
+        });
+    }
+
+    typeLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const isOntwikkelweken = label.dataset.value === 'ontwikkelweken';
+            typeToggle.checked = isOntwikkelweken;
+            updateEditTypeState(isOntwikkelweken);
+        });
+    });
+
+    // Splitsbaar toggle handling
+    const splitsbaarToggle = document.getElementById('edit-vak-splitsbaar-toggle');
+    const splitsbaarValue = document.getElementById('edit-vak-splitsbaar-value');
+    const splitsbaarLabels = document.querySelectorAll('.edit-splitsbaar-label');
+    const splitsbaarHint = document.getElementById('edit-splitsbaar-hint');
+
+    function updateEditSplitsbaarState(isNietSplitsbaar) {
+        if (isNietSplitsbaar) {
+            splitsbaarValue.value = 'false';
+            splitsbaarLabels[0].classList.remove('active');
+            splitsbaarLabels[1].classList.add('active');
+            if (splitsbaarHint) splitsbaarHint.textContent = 'Docenten kunnen alleen alle eenheden tegelijk selecteren';
+        } else {
+            splitsbaarValue.value = 'true';
+            splitsbaarLabels[0].classList.add('active');
+            splitsbaarLabels[1].classList.remove('active');
+            if (splitsbaarHint) splitsbaarHint.textContent = 'Docenten kunnen eenheden selecteren';
+        }
+    }
+
+    if (splitsbaarToggle) {
+        splitsbaarToggle.addEventListener('change', () => {
+            updateEditSplitsbaarState(splitsbaarToggle.checked);
+        });
+    }
+
+    splitsbaarLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const isNietSplitsbaar = label.dataset.value === 'niet-splitsbaar';
+            splitsbaarToggle.checked = isNietSplitsbaar;
+            updateEditSplitsbaarState(isNietSplitsbaar);
+        });
+    });
+
+    // Form submit handler
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const vakId = document.getElementById('edit-vak-id').value;
+        const vak = state.vakken.find(v => v.id === vakId);
+        if (!vak) return;
+
+        const type = document.getElementById('edit-vak-type-value').value;
+
+        // Update vak properties
+        vak.naam = document.getElementById('edit-vak-naam').value.trim();
+        vak.kleur = document.getElementById('edit-vak-kleur').value;
+        vak.opslagfactor = parseInt(document.getElementById('edit-vak-opslagfactor').value) || 40;
+        vak.splitsbaar = document.getElementById('edit-vak-splitsbaar-value').value === 'true';
+        vak.type = type;
+
+        if (type === 'ontwikkelweken') {
+            vak.ontwikkelweken = {
+                1: parseInt(document.getElementById('edit-vak-ow1').value) || 0,
+                2: parseInt(document.getElementById('edit-vak-ow2').value) || 0,
+                3: parseInt(document.getElementById('edit-vak-ow3').value) || 0,
+                4: parseInt(document.getElementById('edit-vak-ow4').value) || 0,
+                5: parseInt(document.getElementById('edit-vak-ow5').value) || 0,
+                6: parseInt(document.getElementById('edit-vak-ow6').value) || 0,
+                7: parseInt(document.getElementById('edit-vak-ow7').value) || 0,
+                8: parseInt(document.getElementById('edit-vak-ow8').value) || 0
+            };
+            vak.periodes = null;
+        } else {
+            vak.periodes = {
+                1: parseInt(document.getElementById('edit-vak-p1').value) || 0,
+                2: parseInt(document.getElementById('edit-vak-p2').value) || 0,
+                3: parseInt(document.getElementById('edit-vak-p3').value) || 0,
+                4: parseInt(document.getElementById('edit-vak-p4').value) || 0
+            };
+            vak.ontwikkelweken = null;
+        }
+
+        saveToLocalStorage();
+        renderVakkenLijst();
+        // Close modal explicitly
+        document.getElementById('edit-vak-modal').style.display = 'none';
+    });
+}
+
 
 // ============================================
 // DOCENTEN
@@ -2151,6 +2745,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initVerdelingView();
     initExport();
     setupTakenbeheer();
+    initEditVakForm();
+    initEditTaakForm();
 
     // Initial renders
     renderLeerjarenLijst();
@@ -2164,8 +2760,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Werkverdelingsapp initialized!');
 });
 
-// Make delete functions globally available
+// Make functions globally available
 window.deleteVak = deleteVak;
 window.deleteDocent = deleteDocent;
 window.deleteLeerjaar = deleteLeerjaar;
 window.deleteTaak = deleteTaak;
+window.editVak = editVak;
+window.closeEditVakModal = closeEditVakModal;
+window.saveEditVak = saveEditVak;
+window.editTaak = editTaak;
+window.closeEditTaakModal = closeEditTaakModal;
+window.saveEditTaak = saveEditTaak;

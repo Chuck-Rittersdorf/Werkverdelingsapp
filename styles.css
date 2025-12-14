@@ -266,6 +266,24 @@ body {
     flex-shrink: 0;
 }
 
+.collapsible-header-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.collapsible-header-left h3 {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.collapsible-header-left .collapsible-summary {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
 .collapsible-summary {
     flex: 1;
     font-size: 0.85rem;
@@ -527,6 +545,70 @@ body {
     border-color: var(--text-primary);
 }
 
+/* Toggle Switch */
+.toggle-switch-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.toggle-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.toggle-label.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--accent-primary);
+    border-radius: 24px;
+    transition: all var(--transition-fast);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background-color: var(--accent-secondary);
+}
+
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(20px);
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;
@@ -551,6 +633,8 @@ body {
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .btn-secondary {
@@ -561,6 +645,8 @@ body {
 
 .btn-secondary:hover {
     background: var(--bg-card-hover);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .btn-danger {
@@ -623,6 +709,14 @@ body {
     font-size: 0.75rem;
 }
 
+.leerjaar-badge-style {
+    background: var(--accent-gradient);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
 .leerjaar-details {
     font-size: 0.8125rem;
     color: var(--text-secondary);
@@ -673,7 +767,7 @@ body {
 .vak-type-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--accent-primary);
     padding: var(--space-xs) var(--space-sm);
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
@@ -724,6 +818,101 @@ body {
 
 .taak-item {
     border-left-color: var(--accent-primary);
+}
+
+/* Expanded Vak Item Styles */
+.vak-item-expanded {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+}
+
+.vak-item-expanded .vak-info {
+    flex: 1;
+    width: 100%;
+}
+
+.vak-item-expanded>.vak-color {
+    position: absolute;
+    top: var(--space-md);
+    left: var(--space-md);
+}
+
+.vak-item-expanded .vak-actions {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+}
+
+.vak-item-expanded {
+    position: relative;
+    padding-left: 72px;
+    padding-right: 80px;
+}
+
+.vak-klassen-row {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+.vak-klassen-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.vak-klassen-codes {
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    font-family: 'SF Mono', monospace;
+}
+
+.vak-stats-row {
+    margin-top: var(--space-xs);
+}
+
+.vak-stat {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.vak-stat-total {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.vak-meta-row {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px dashed var(--border-color);
+}
+
+.vak-meta {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.vak-periodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+}
+
+.vak-periode {
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
 }
 
 .taak-icoon {
@@ -2323,4 +2512,120 @@ body {
     .docent-periodes {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.modal-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.modal-header-info .leerjaar-badge-style {
+    font-size: 0.75rem;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    background: var(--bg-secondary);
+    color: var(--danger);
+}
+
+.modal-body {
+    padding: var(--space-lg);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--space-lg);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-secondary);
+    border-color: var(--text-secondary);
 }
