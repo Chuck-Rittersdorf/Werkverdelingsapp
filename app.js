@@ -1278,7 +1278,7 @@ function renderDocentenLijst() {
     const container = document.getElementById('docenten-lijst');
 
     if (state.docenten.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nog geen docenten toegevoegd.</p>';
+        container.innerHTML = '<p class="empty-state">Nog geen teamleden toegevoegd.</p>';
         return;
     }
 

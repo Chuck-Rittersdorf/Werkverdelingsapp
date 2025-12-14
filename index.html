@@ -30,7 +30,7 @@
                 </button>
                 <button class="nav-tab" data-view="docenten">
                     <span class="tab-icon">👥</span>
-                    Docentenbeheer
+                    Teamledenbeheer
                 </button>
                 <button class="nav-tab" data-view="klassen">
                     <span class="tab-icon">🏫</span>
@@ -465,38 +465,38 @@
             <!-- Docenten View -->
             <section class="view" id="view-docenten">
                 <div class="view-header">
-                    <h2>Docentenbeheer</h2>
-                    <p>Voeg docenten toe die werk kunnen ontvangen</p>
+                    <h2>Teamledenbeheer</h2>
+
                 </div>
 
                 <div class="docenten-layout">
                     <div class="card form-card">
-                        <h3>➕ Nieuwe docent toevoegen</h3>
+                        <h3>➕ Teamlid toevoegen</h3>
                         <form id="form-docent">
                             <div class="form-group">
                                 <label for="docent-naam">Naam</label>
                                 <input type="text" id="docent-naam" placeholder="bijv. Jan Jansen" required>
                             </div>
                             <button type="submit" class="btn btn-primary">
-                                <span>➕</span> Docent Toevoegen
+                                <span>➕</span> Teamlid toevoegen
                             </button>
                         </form>
 
                         <div class="quick-add">
-                            <h4>Snel meerdere docenten toevoegen</h4>
+                            <h4>Meerdere teamleden toevoegen</h4>
                             <textarea id="docenten-bulk"
                                 placeholder="Eén naam per regel:&#10;Jan Jansen&#10;Piet de Vries&#10;Marie Smit"
                                 rows="5"></textarea>
                             <button type="button" class="btn btn-secondary" id="btn-bulk-add">
-                                Allemaal Toevoegen
+                                Teamleden toevoegen
                             </button>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h3>👥 Docentenoverzicht</h3>
+                        <h3>👥 Teamoverzicht</h3>
                         <div id="docenten-lijst" class="docenten-lijst">
-                            <p class="empty-state">Nog geen docenten toegevoegd.</p>
+                            <p class="empty-state">Nog geen teamleden toegevoegd.</p>
                         </div>
                     </div>
                 </div>
