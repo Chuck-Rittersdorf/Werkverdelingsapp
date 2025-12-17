@@ -1321,25 +1321,24 @@ function initDocentenForm() {
         e.preventDefault();
 
         const naam = document.getElementById('docent-naam').value.trim();
-        if (naam) {
-            addDocent(naam);
-            document.getElementById('docent-naam').value = '';
-        }
-    });
+        const aanstelling = parseFloat(document.getElementById('docent-aanstelling').value) || 1.0;
+        const inhouding = parseFloat(document.getElementById('docent-inhouding').value) || 0;
 
-    // Bulk add
-    document.getElementById('btn-bulk-add').addEventListener('click', () => {
-        const textarea = document.getElementById('docenten-bulk');
-        const names = textarea.value.split('\n').map(n => n.trim()).filter(n => n);
-        names.forEach(naam => addDocent(naam));
-        textarea.value = '';
+        if (naam) {
+            addDocent(naam, aanstelling, inhouding);
+            document.getElementById('docent-naam').value = '';
+            document.getElementById('docent-aanstelling').value = '1.0';
+            document.getElementById('docent-inhouding').value = '0';
+        }
     });
 }
 
-function addDocent(naam) {
+function addDocent(naam, aanstellingBruto = 1.0, inhouding = 0) {
     const docent = {
         id: generateId(),
-        naam: naam
+        naam: naam,
+        aanstellingBruto: aanstellingBruto,
+        inhouding: inhouding
     };
     state.docenten.push(docent);
     saveToLocalStorage();
@@ -1355,23 +1354,64 @@ function renderDocentenLijst() {
         return;
     }
 
+    // Constants for FTE calculation
+    const BESCHIKBAAR_PER_FTE = 1600; // 1659 - 59 uur deskundigheidsbevordering
+
     container.innerHTML = state.docenten.map(docent => {
-        const initials = docent.naam.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-        const count = state.toewijzingen.filter(t => t.docentId === docent.id).length;
+        // Get FTE values with defaults for backward compatibility
+        const brutoFTE = docent.aanstellingBruto ?? 1.0;
+        const inhouding = docent.inhouding ?? 0;
+
+        // Calculations
+        const nettoFTE = brutoFTE - inhouding;
+        const beschikbareUren = nettoFTE * BESCHIKBAAR_PER_FTE;
+        const onderwijsUren = beschikbareUren * 0.75;
+        const takenUren = beschikbareUren * 0.25;
 
         return `
-            <div class="docent-item">
-                <div class="docent-avatar">${initials}</div>
-                <div class="docent-naam">${escapeHtml(docent.naam)}</div>
-                <span style="font-size: 0.75rem; color: var(--text-muted)">${count} blokjes</span>
-                <button class="docent-delete" onclick="deleteDocent('${docent.id}')" title="Verwijderen">🗑️</button>
+            <div class="docent-card">
+                <div class="docent-header">
+                    <div class="docent-naam-groot">${escapeHtml(docent.naam)}</div>
+                    <div class="docent-actions">
+                        <button class="docent-edit" onclick="editDocent('${docent.id}')" title="Bewerken">✏️</button>
+                        <button class="docent-delete" onclick="deleteDocent('${docent.id}')" title="Verwijderen">🗑️</button>
+                    </div>
+                </div>
+                <div class="docent-fte-grid">
+                    <div class="fte-item">
+                        <span class="fte-label">Bruto FTE</span>
+                        <span class="fte-value">${brutoFTE.toFixed(2)}</span>
+                    </div>
+                    <div class="fte-item">
+                        <span class="fte-label">Inhouding</span>
+                        <span class="fte-value">${inhouding.toFixed(2)}</span>
+                    </div>
+                    <div class="fte-item highlight">
+                        <span class="fte-label">Netto FTE</span>
+                        <span class="fte-value">${nettoFTE.toFixed(2)}</span>
+                    </div>
+                    <div class="fte-item highlight">
+                        <span class="fte-label">Beschikbaar</span>
+                        <span class="fte-value">${beschikbareUren.toFixed(0)}u</span>
+                    </div>
+                </div>
+                <div class="docent-verdeling">
+                    <div class="verdeling-item onderwijs">
+                        <span class="verdeling-label">75% 🎓</span>
+                        <span class="verdeling-value">${onderwijsUren.toFixed(0)}u</span>
+                    </div>
+                    <div class="verdeling-item taken">
+                        <span class="verdeling-label">25% ✅</span>
+                        <span class="verdeling-value">${takenUren.toFixed(0)}u</span>
+                    </div>
+                </div>
             </div>
         `;
     }).join('');
 }
 
 function deleteDocent(docentId) {
-    if (!confirm('Weet je zeker dat je deze docent wilt verwijderen? Alle toewijzingen worden ook verwijderd.')) {
+    if (!confirm('Weet je zeker dat je dit teamlid wilt verwijderen? Alle toewijzingen worden ook verwijderd.')) {
         return;
     }
     state.docenten = state.docenten.filter(d => d.id !== docentId);
@@ -1385,6 +1425,37 @@ function updateDocentSelector() {
     const selector = document.getElementById('select-docent');
     selector.innerHTML = '<option value="">-- Selecteer docent --</option>' +
         state.docenten.map(d => `<option value="${d.id}">${escapeHtml(d.naam)}</option>`).join('');
+}
+
+// Edit Docent Functions
+function editDocent(docentId) {
+    const docent = state.docenten.find(d => d.id === docentId);
+    if (!docent) return;
+
+    document.getElementById('edit-docent-id').value = docent.id;
+    document.getElementById('edit-docent-naam').value = docent.naam;
+    document.getElementById('edit-docent-aanstelling').value = docent.aanstellingBruto ?? 1.0;
+    document.getElementById('edit-docent-inhouding').value = docent.inhouding ?? 0;
+
+    document.getElementById('edit-docent-modal').style.display = 'flex';
+}
+
+function closeEditDocentModal() {
+    document.getElementById('edit-docent-modal').style.display = 'none';
+}
+
+function saveEditDocent() {
+    const docentId = document.getElementById('edit-docent-id').value;
+    const docent = state.docenten.find(d => d.id === docentId);
+    if (!docent) return;
+
+    docent.naam = document.getElementById('edit-docent-naam').value.trim();
+    docent.aanstellingBruto = parseFloat(document.getElementById('edit-docent-aanstelling').value) || 1.0;
+    docent.inhouding = parseFloat(document.getElementById('edit-docent-inhouding').value) || 0;
+
+    saveToLocalStorage();
+    renderDocentenLijst();
+    updateDocentSelector();
 }
 
 // ============================================
@@ -2858,3 +2929,6 @@ window.editTaak = editTaak;
 window.closeEditTaakModal = closeEditTaakModal;
 window.saveEditTaak = saveEditTaak;
 window.setUserRole = setUserRole;
+window.editDocent = editDocent;
+window.closeEditDocentModal = closeEditDocentModal;
+window.saveEditDocent = saveEditDocent;

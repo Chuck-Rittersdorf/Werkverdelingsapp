@@ -21,7 +21,7 @@
             </div>
             <div class="nav-tabs">
                 <button class="nav-tab active" data-view="curriculum" data-role="admin">
-                    <span class="tab-icon">📋</span>
+                    <span class="tab-icon">📚</span>
                     Lessenbeheer
                 </button>
                 <button class="nav-tab" data-view="takenbeheer" data-role="admin">
@@ -34,10 +34,10 @@
                 </button>
                 <button class="nav-tab" data-view="klassen">
                     <span class="tab-icon">🏫</span>
-                    Klassen
+                    Lessen
                 </button>
                 <button class="nav-tab" data-view="taken">
-                    <span class="tab-icon">📋</span>
+                    <span class="tab-icon">☑️</span>
                     Taken
                 </button>
                 <button class="nav-tab" data-view="verdeling">
@@ -303,7 +303,7 @@
             <!-- Takenbeheer View -->
             <section class="view" id="view-takenbeheer">
                 <div class="view-header">
-                    <h2>✅ Takenbeheer</h2>
+                    <h2>Takenbeheer</h2>
 
                 </div>
 
@@ -475,22 +475,23 @@
                         <form id="form-docent">
                             <div class="form-group">
                                 <label for="docent-naam">Naam</label>
-                                <input type="text" id="docent-naam" placeholder="bijv. Jan Jansen" required>
+                                <input type="text" id="docent-naam" placeholder="bijv. fwals" required>
+                            </div>
+                            <div class="modal-form-row">
+                                <div class="form-group">
+                                    <label for="docent-aanstelling">Aanstelling (bruto FTE)</label>
+                                    <input type="number" id="docent-aanstelling" min="0" max="1.5" step="0.01"
+                                        value="1.0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="docent-inhouding">Inhouding (FTE)</label>
+                                    <input type="number" id="docent-inhouding" min="0" max="1" step="0.01" value="0">
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary">
                                 <span>➕</span> Teamlid toevoegen
                             </button>
                         </form>
-
-                        <div class="quick-add">
-                            <h4>Meerdere teamleden toevoegen</h4>
-                            <textarea id="docenten-bulk"
-                                placeholder="Eén naam per regel:&#10;Jan Jansen&#10;Piet de Vries&#10;Marie Smit"
-                                rows="5"></textarea>
-                            <button type="button" class="btn btn-secondary" id="btn-bulk-add">
-                                Teamleden toevoegen
-                            </button>
-                        </div>
                     </div>
 
                     <div class="card">
@@ -559,7 +560,7 @@
             <!-- Taken View (Docent Task Selection) -->
             <section class="view" id="view-taken">
                 <div class="view-header">
-                    <h2>📋 Taken Selecteren</h2>
+                    <h2>Taken Selecteren</h2>
                     <p>Selecteer de taken die je wilt uitvoeren</p>
                 </div>
 
@@ -588,7 +589,7 @@
             <!-- Mijn Overzicht View -->
             <section class="view" id="view-verdeling">
                 <div class="view-header">
-                    <h2>📋 Mijn Overzicht</h2>
+                    <h2>Mijn Overzicht</h2>
                     <div class="docent-selector">
                         <label for="select-docent">Docent:</label>
                         <select id="select-docent">
@@ -618,7 +619,7 @@
             <section class="view" id="view-dashboard">
                 <div class="view-header dashboard-header">
                     <div class="dashboard-title">
-                        <h2>📊 Dashboard</h2>
+                        <h2>Dashboard</h2>
                         <div class="progress-overview">
                             <div class="progress-bar-container">
                                 <div class="progress-bar" id="progress-bar"></div>
@@ -886,6 +887,42 @@
         </div>
     </div>
 
+
+    <!-- Edit Docent Modal -->
+    <div id="edit-docent-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop" onclick="closeEditDocentModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Teamlid bewerken</h3>
+                <button class="modal-close" onclick="closeEditDocentModal()">×</button>
+            </div>
+            <form id="form-edit-docent">
+                <input type="hidden" id="edit-docent-id">
+
+                <div class="form-group">
+                    <label for="edit-docent-naam">Naam</label>
+                    <input type="text" id="edit-docent-naam" required>
+                </div>
+
+                <div class="modal-form-row">
+                    <div class="form-group">
+                        <label for="edit-docent-aanstelling">Aanstelling (bruto FTE)</label>
+                        <input type="number" id="edit-docent-aanstelling" min="0" max="1.5" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-docent-inhouding">Inhouding (FTE)</label>
+                        <input type="number" id="edit-docent-inhouding" min="0" max="1" step="0.01">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditDocentModal()">Annuleren</button>
+                    <button type="button" class="btn btn-primary" onclick="closeEditDocentModal(); saveEditDocent();">💾
+                        Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Role Selection Modal -->
     <div id="role-selection-modal" class="modal" style="display: none;">
