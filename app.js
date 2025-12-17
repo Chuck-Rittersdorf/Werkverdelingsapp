@@ -1683,8 +1683,8 @@ function renderKlassenCurriculum() {
     const yearPct = totalUnitsYear > 0 ? Math.round((assignedUnitsYear / totalUnitsYear) * 100) : 0;
     const classPct = totalUnitsClass > 0 ? Math.round((assignedUnitsClass / totalUnitsClass) * 100) : 0;
 
-    leerjaarTitel.textContent = `Jaar ${klassenState.geselecteerdLeerjaar} (${yearPct}% verdeeld)`;
-    titel.textContent = `${klassenState.geselecteerdeKlas} (${classPct}% verdeeld)`;
+    leerjaarTitel.innerHTML = `<span style="color:var(--accent-primary)">Jaar ${klassenState.geselecteerdLeerjaar}</span> <span style="color:#ffe9a0;font-size:0.7rem">(${yearPct}% verdeeld)</span>`;
+    titel.innerHTML = `<span style="color:var(--accent-primary)">${escapeHtml(klassenState.geselecteerdeKlas)}</span> <span style="color:#ffe9a0;font-size:0.7rem">(${classPct}% verdeeld)</span>`;
 
     if (alleVakken.length === 0) {
         container.innerHTML = '<p class="empty-state">Geen vakken voor dit leerjaar</p>';
@@ -1768,7 +1768,6 @@ function renderKlassenCurriculum() {
                 <div class="periode-section basisweken-section">
                     <div class="periode-section-header">
                         <h4>📚 Periode ${periode}</h4>
-                        <span class="periode-section-count">${basisVakkenMetPeriode.reduce((sum, v) => sum + (v.periodes[periode] || 0), 0)} eenheden</span>
                     </div>
                     ${renderVakSections(basisVakkenMetPeriode, periode, 'P')}
                     ${basisVakkenMetPeriode.length === 0 ? '<p class="empty-state" style="font-size:0.75rem">Geen vakken</p>' : ''}
@@ -1776,7 +1775,6 @@ function renderKlassenCurriculum() {
                 <div class="periode-section ow-section">
                     <div class="periode-section-header">
                         <h4>⭐ Ontwikkelweek ${ow1}</h4>
-                        <span class="periode-section-count">${owVakkenMetOW1.reduce((sum, v) => sum + (v.ontwikkelweken[ow1] || 0), 0)} eenheden</span>
                     </div>
                     ${renderVakSectionsOW(owVakkenMetOW1, ow1)}
                     ${owVakkenMetOW1.length === 0 ? '<p class="empty-state" style="font-size:0.75rem">Geen vakken</p>' : ''}
@@ -1784,7 +1782,6 @@ function renderKlassenCurriculum() {
                 <div class="periode-section ow-section">
                     <div class="periode-section-header">
                         <h4>⭐ Ontwikkelweek ${ow2}</h4>
-                        <span class="periode-section-count">${owVakkenMetOW2.reduce((sum, v) => sum + (v.ontwikkelweken[ow2] || 0), 0)} eenheden</span>
                     </div>
                     ${renderVakSectionsOW(owVakkenMetOW2, ow2)}
                     ${owVakkenMetOW2.length === 0 ? '<p class="empty-state" style="font-size:0.75rem">Geen vakken</p>' : ''}
