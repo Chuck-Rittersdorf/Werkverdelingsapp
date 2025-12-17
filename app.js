@@ -1611,19 +1611,80 @@ function updateKlassenKlasSelector() {
 function renderKlassenCurriculum() {
     const container = document.getElementById('klassen-curriculum-grid');
     const titel = document.getElementById('klassen-klas-titel');
+    const leerjaarTitel = document.getElementById('klassen-leerjaar-titel');
 
     if (!klassenState.geselecteerdeDocent || !klassenState.geselecteerdLeerjaar || !klassenState.geselecteerdeKlas) {
         container.innerHTML = '<p class="empty-state">Selecteer een docent, leerjaar en klas om het curriculum te zien</p>';
         titel.textContent = '';
+        leerjaarTitel.textContent = '';
         return;
     }
-
-    titel.textContent = `- ${klassenState.geselecteerdeKlas}`;
 
     // Get vakken for this leerjaar, split by type
     const alleVakken = state.vakken.filter(v => v.leerjaar === klassenState.geselecteerdLeerjaar);
     const basisVakken = alleVakken.filter(v => v.type !== 'ontwikkelweken' && v.periodes);
     const owVakken = alleVakken.filter(v => v.type === 'ontwikkelweken' && v.ontwikkelweken);
+
+    // Calculate progress for the entire year (all classes)
+    let totalUnitsYear = 0;
+    let assignedUnitsYear = 0;
+    alleVakken.forEach(vak => {
+        const klassen = vak.klassen || [];
+        klassen.forEach(klas => {
+            if (vak.type === 'ontwikkelweken' && vak.ontwikkelweken) {
+                [1, 2, 3, 4, 5, 6, 7, 8].forEach(ow => {
+                    const count = vak.ontwikkelweken[ow] || 0;
+                    totalUnitsYear += count;
+                    for (let i = 1; i <= count; i++) {
+                        const blokjeId = `${vak.id}-${klas}-OW${ow}-${i}`;
+                        if (state.toewijzingen.some(t => t.blokjeId === blokjeId)) assignedUnitsYear++;
+                    }
+                });
+            } else if (vak.periodes) {
+                [1, 2, 3, 4].forEach(p => {
+                    const count = vak.periodes[p] || 0;
+                    totalUnitsYear += count;
+                    for (let i = 1; i <= count; i++) {
+                        const blokjeId = `${vak.id}-${klas}-P${p}-${i}`;
+                        if (state.toewijzingen.some(t => t.blokjeId === blokjeId)) assignedUnitsYear++;
+                    }
+                });
+            }
+        });
+    });
+
+    // Calculate progress for selected class only
+    let totalUnitsClass = 0;
+    let assignedUnitsClass = 0;
+    alleVakken.forEach(vak => {
+        const klassen = vak.klassen || [];
+        if (!klassen.includes(klassenState.geselecteerdeKlas)) return;
+        if (vak.type === 'ontwikkelweken' && vak.ontwikkelweken) {
+            [1, 2, 3, 4, 5, 6, 7, 8].forEach(ow => {
+                const count = vak.ontwikkelweken[ow] || 0;
+                totalUnitsClass += count;
+                for (let i = 1; i <= count; i++) {
+                    const blokjeId = `${vak.id}-${klassenState.geselecteerdeKlas}-OW${ow}-${i}`;
+                    if (state.toewijzingen.some(t => t.blokjeId === blokjeId)) assignedUnitsClass++;
+                }
+            });
+        } else if (vak.periodes) {
+            [1, 2, 3, 4].forEach(p => {
+                const count = vak.periodes[p] || 0;
+                totalUnitsClass += count;
+                for (let i = 1; i <= count; i++) {
+                    const blokjeId = `${vak.id}-${klassenState.geselecteerdeKlas}-P${p}-${i}`;
+                    if (state.toewijzingen.some(t => t.blokjeId === blokjeId)) assignedUnitsClass++;
+                }
+            });
+        }
+    });
+
+    const yearPct = totalUnitsYear > 0 ? Math.round((assignedUnitsYear / totalUnitsYear) * 100) : 0;
+    const classPct = totalUnitsClass > 0 ? Math.round((assignedUnitsClass / totalUnitsClass) * 100) : 0;
+
+    leerjaarTitel.textContent = `Jaar ${klassenState.geselecteerdLeerjaar} (${yearPct}% verdeeld)`;
+    titel.textContent = `${klassenState.geselecteerdeKlas} (${classPct}% verdeeld)`;
 
     if (alleVakken.length === 0) {
         container.innerHTML = '<p class="empty-state">Geen vakken voor dit leerjaar</p>';
@@ -1638,6 +1699,69 @@ function renderKlassenCurriculum() {
         const basisVakkenMetPeriode = basisVakken.filter(v => (v.periodes[periode] || 0) > 0);
         const owVakkenMetOW1 = owVakken.filter(v => (v.ontwikkelweken[ow1] || 0) > 0);
         const owVakkenMetOW2 = owVakken.filter(v => (v.ontwikkelweken[ow2] || 0) > 0);
+        // Calculate lesuren per class for this period (for the selected docent)
+        const lesuurPerKlas = {};
+
+        // Calculate for basisweken
+        basisVakkenMetPeriode.forEach(vak => {
+            const count = vak.periodes[periode] || 0;
+            const klassen = vak.klassen || [];
+            klassen.forEach(klas => {
+                for (let i = 1; i <= count; i++) {
+                    const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId === klassenState.geselecteerdeDocent);
+                    if (toewijzing) {
+                        if (!lesuurPerKlas[klas]) lesuurPerKlas[klas] = { basis: 0, ow1: 0, ow2: 0 };
+                        lesuurPerKlas[klas].basis += 0.5; // 1 eenheid = 0.5 klokuur
+                    }
+                }
+            });
+        });
+
+        // Calculate for OW1
+        owVakkenMetOW1.forEach(vak => {
+            const count = vak.ontwikkelweken[ow1] || 0;
+            const klassen = vak.klassen || [];
+            klassen.forEach(klas => {
+                for (let i = 1; i <= count; i++) {
+                    const blokjeId = `${vak.id}-${klas}-OW${ow1}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId === klassenState.geselecteerdeDocent);
+                    if (toewijzing) {
+                        if (!lesuurPerKlas[klas]) lesuurPerKlas[klas] = { basis: 0, ow1: 0, ow2: 0 };
+                        lesuurPerKlas[klas].ow1 += 0.5;
+                    }
+                }
+            });
+        });
+
+        // Calculate for OW2
+        owVakkenMetOW2.forEach(vak => {
+            const count = vak.ontwikkelweken[ow2] || 0;
+            const klassen = vak.klassen || [];
+            klassen.forEach(klas => {
+                for (let i = 1; i <= count; i++) {
+                    const blokjeId = `${vak.id}-${klas}-OW${ow2}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId === klassenState.geselecteerdeDocent);
+                    if (toewijzing) {
+                        if (!lesuurPerKlas[klas]) lesuurPerKlas[klas] = { basis: 0, ow1: 0, ow2: 0 };
+                        lesuurPerKlas[klas].ow2 += 0.5;
+                    }
+                }
+            });
+        });
+
+        // Calculate totals
+        let totaalBasis = 0, totaalOw1 = 0, totaalOw2 = 0;
+        Object.values(lesuurPerKlas).forEach(v => {
+            totaalBasis += v.basis;
+            totaalOw1 += v.ow1;
+            totaalOw2 += v.ow2;
+        });
+
+        const klassenRows = Object.keys(lesuurPerKlas).sort().map(klas => {
+            const v = lesuurPerKlas[klas];
+            return `<div class="uren-mini-row"><span>${escapeHtml(klas)}</span><span>${v.basis.toFixed(1)}</span><span>${v.ow1.toFixed(1)}</span><span>${v.ow2.toFixed(1)}</span></div>`;
+        }).join('');
 
         return `
             <div class="periode-row">
@@ -1651,7 +1775,7 @@ function renderKlassenCurriculum() {
                 </div>
                 <div class="periode-section ow-section">
                     <div class="periode-section-header">
-                        <h4>🔧 OW${ow1}</h4>
+                        <h4>⭐ Ontwikkelweek ${ow1}</h4>
                         <span class="periode-section-count">${owVakkenMetOW1.reduce((sum, v) => sum + (v.ontwikkelweken[ow1] || 0), 0)} eenheden</span>
                     </div>
                     ${renderVakSectionsOW(owVakkenMetOW1, ow1)}
@@ -1659,11 +1783,21 @@ function renderKlassenCurriculum() {
                 </div>
                 <div class="periode-section ow-section">
                     <div class="periode-section-header">
-                        <h4>🔧 OW${ow2}</h4>
+                        <h4>⭐ Ontwikkelweek ${ow2}</h4>
                         <span class="periode-section-count">${owVakkenMetOW2.reduce((sum, v) => sum + (v.ontwikkelweken[ow2] || 0), 0)} eenheden</span>
                     </div>
                     ${renderVakSectionsOW(owVakkenMetOW2, ow2)}
                     ${owVakkenMetOW2.length === 0 ? '<p class="empty-state" style="font-size:0.75rem">Geen vakken</p>' : ''}
+                </div>
+                <div class="periode-section lesuren-section">
+                    <div class="periode-section-header">
+                        <h4>🕐 Lesuren per week</h4>
+                    </div>
+                    <div class="lesuren-tabel">
+                        <div class="uren-mini-header"><span>Klas</span><span>Basis</span><span>OW${ow1}</span><span>OW${ow2}</span></div>
+                        ${klassenRows || '<div class="uren-mini-row empty-state" style="font-size:0.75rem">Geen selecties</div>'}
+                        <div class="uren-mini-subtotal"><span>Totaal</span><span>${totaalBasis.toFixed(1)}</span><span>${totaalOw1.toFixed(1)}</span><span>${totaalOw2.toFixed(1)}</span></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -1759,9 +1893,17 @@ function renderLeseenheidCheckboxes(vak, periodeKey, count) {
         let className = 'leseenheid-checkbox';
         if (isMine) className += ' mine';
         if (isTaken) className += ' taken';
-        if (isNonSplitsbaar && !isTaken) className += ' locked';
+        if (isNonSplitsbaar && !isTaken && !isMine) className += ' locked';
 
-        const clickHandler = isNonSplitsbaar ? '' : `toggleLeseenheid('${blokjeId}', '${periodeKey}')`;
+        // Click handler logic:
+        // - Splittable lessons: always clickable
+        // - Non-splittable lessons: show alert if taken by others, otherwise no action (use checkbox)
+        let clickHandler = '';
+        if (!isNonSplitsbaar) {
+            clickHandler = `toggleLeseenheid('${blokjeId}', '${periodeKey}')`;
+        } else if (isTaken) {
+            clickHandler = `alert('Deze leseenheid is al geselecteerd door ${escapeHtml(takenByDocent || 'een andere docent')}')`;
+        }
 
         return `<div class="${className}" 
                     data-blokje-id="${blokjeId}"
@@ -1782,7 +1924,7 @@ function toggleLeseenheid(blokjeId, periodeKey) {
 
     if (takenByOther) {
         const docent = state.docenten.find(d => d.id === takenByOther.docentId);
-        alert(`Deze leseenheid is al geclaimd door ${docent?.naam || 'een andere docent'}`);
+        alert(`Deze leseenheid is al geselecteerd door ${docent?.naam || 'een andere docent'}`);
         return;
     }
 
@@ -1811,6 +1953,8 @@ function toggleAllVakLeseenheden(vakId, periodeKey, selectAll) {
     const vak = state.vakken.find(v => v.id === vakId);
     if (!vak) return;
 
+    const isSplitsbaar = vak.splitsbaar !== false; // Default is splitsbaar
+
     // Determine count based on periodeKey (P1-P4 or OW1-OW8)
     let count = 0;
     if (periodeKey.startsWith('OW')) {
@@ -1821,13 +1965,28 @@ function toggleAllVakLeseenheden(vakId, periodeKey, selectAll) {
         count = vak.periodes ? (vak.periodes[pNum] || 0) : 0;
     }
 
+    // For non-splittable: check first if ANY unit is taken by someone else
+    if (!isSplitsbaar && selectAll) {
+        for (let num = 1; num <= count; num++) {
+            const blokjeId = `${vakId}-${klassenState.geselecteerdeKlas}-${periodeKey}-${num}`;
+            const takenByOther = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId !== klassenState.geselecteerdeDocent);
+            if (takenByOther) {
+                const docent = state.docenten.find(d => d.id === takenByOther.docentId);
+                alert(`Deze leseenheid is al geselecteerd door ${docent?.naam || 'een andere docent'}`);
+                // Revert checkbox state by re-rendering
+                renderKlassenCurriculum();
+                return;
+            }
+        }
+    }
+
     for (let num = 1; num <= count; num++) {
         const blokjeId = `${vakId}-${klassenState.geselecteerdeKlas}-${periodeKey}-${num}`;
         const existing = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId === klassenState.geselecteerdeDocent);
         const takenByOther = state.toewijzingen.find(t => t.blokjeId === blokjeId && t.docentId !== klassenState.geselecteerdeDocent);
 
         if (takenByOther) {
-            // Skip - already taken by someone else
+            // For splittable: skip silently. For non-splittable: already handled above
             continue;
         }
 

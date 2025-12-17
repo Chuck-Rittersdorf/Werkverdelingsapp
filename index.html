@@ -506,8 +506,7 @@
             <!-- Klassen View -->
             <section class="view" id="view-klassen">
                 <div class="view-header">
-                    <h2>Leseenheden per Klas</h2>
-                    <p>Selecteer een klas en vink de leseenheden aan die je wilt claimen</p>
+                    <h2>Lessen</h2>
                 </div>
 
                 <div class="klassen-layout">
@@ -536,20 +535,27 @@
                         <div class="klassen-legenda">
                             <h4>Legenda</h4>
                             <div class="legenda-item">
-                                <span class="legenda-box available"></span> Beschikbaar
+                                <span class="legenda-box available"></span> Beschikbare leseenheid*
                             </div>
                             <div class="legenda-item">
-                                <span class="legenda-box mine"></span> Van jou
+                                <span class="legenda-box available dashed"></span> Beschikbare les**
                             </div>
                             <div class="legenda-item">
-                                <span class="legenda-box taken"></span> Van anderen
+                                <span class="legenda-box mine"></span> Door jou geselecteerd
+                            </div>
+                            <div class="legenda-item">
+                                <span class="legenda-box taken"></span> Door anderen geselecteerd
+                            </div>
+                            <div class="legenda-footnote">
+                                <em>*Een eenheid = 30 minuten</em><br>
+                                <em>**niet splitsbaar</em>
                             </div>
                         </div>
                     </div>
 
                     <!-- Curriculum per class -->
                     <div class="card klassen-curriculum">
-                        <h3>📚 Curriculum <span id="klassen-klas-titel"></span></h3>
+                        <h3>📅 <span id="klassen-leerjaar-titel"></span> | <span id="klassen-klas-titel"></span></h3>
                         <div id="klassen-curriculum-grid" class="klassen-grid">
                             <p class="empty-state">Selecteer een docent, leerjaar en klas om het curriculum te zien</p>
                         </div>

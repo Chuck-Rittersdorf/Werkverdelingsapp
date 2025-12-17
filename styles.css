@@ -1150,6 +1150,10 @@ body {
     border-color: var(--text-muted);
 }
 
+.legenda-box.available.dashed {
+    border-style: dashed;
+}
+
 .legenda-box.mine {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
@@ -1159,6 +1163,12 @@ body {
     background: var(--danger);
     border-color: var(--danger);
     opacity: 0.6;
+}
+
+.legenda-footnote {
+    margin-top: var(--space-sm);
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .klassen-curriculum {
@@ -2481,21 +2491,53 @@ body {
 }
 
 .uren-mini-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-xs);
     padding: 2px 0;
     color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.uren-mini-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-xs);
+    padding: 4px 0;
+    font-weight: 600;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--space-xs);
+}
+
+.uren-mini-header span:not(:first-child),
+.uren-mini-row span:not(:first-child),
+.uren-mini-subtotal span:not(:first-child) {
+    text-align: right;
 }
 
 .uren-mini-subtotal {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--space-xs);
     padding: 4px 0;
     margin-top: auto;
     padding-top: var(--space-xs);
     border-top: 1px solid var(--border-color);
     font-weight: 600;
+    font-size: 0.75rem;
     color: var(--text-primary);
+}
+
+.lesuren-section {
+    min-width: 180px;
+}
+
+.lesuren-tabel {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
 }
 
 @media (max-width: 768px) {
