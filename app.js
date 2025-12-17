@@ -1699,11 +1699,11 @@ function renderKlassenCurriculum() {
         const basisVakkenMetPeriode = basisVakken.filter(v => (v.periodes[periode] || 0) > 0);
         const owVakkenMetOW1 = owVakken.filter(v => (v.ontwikkelweken[ow1] || 0) > 0);
         const owVakkenMetOW2 = owVakken.filter(v => (v.ontwikkelweken[ow2] || 0) > 0);
-        // Calculate lesuren per class for this period (for the selected docent)
+        // Calculate lesuren per class for this period (for the selected docent) - ALL LEERJAREN
         const lesuurPerKlas = {};
 
-        // Calculate for basisweken
-        basisVakkenMetPeriode.forEach(vak => {
+        // Calculate for basisweken - all vakken across all leerjaren
+        state.vakken.filter(v => v.type !== 'ontwikkelweken' && v.periodes && (v.periodes[periode] || 0) > 0).forEach(vak => {
             const count = vak.periodes[periode] || 0;
             const klassen = vak.klassen || [];
             klassen.forEach(klas => {
@@ -1718,8 +1718,8 @@ function renderKlassenCurriculum() {
             });
         });
 
-        // Calculate for OW1
-        owVakkenMetOW1.forEach(vak => {
+        // Calculate for OW1 - all vakken across all leerjaren
+        state.vakken.filter(v => v.type === 'ontwikkelweken' && v.ontwikkelweken && (v.ontwikkelweken[ow1] || 0) > 0).forEach(vak => {
             const count = vak.ontwikkelweken[ow1] || 0;
             const klassen = vak.klassen || [];
             klassen.forEach(klas => {
@@ -1734,8 +1734,8 @@ function renderKlassenCurriculum() {
             });
         });
 
-        // Calculate for OW2
-        owVakkenMetOW2.forEach(vak => {
+        // Calculate for OW2 - all vakken across all leerjaren
+        state.vakken.filter(v => v.type === 'ontwikkelweken' && v.ontwikkelweken && (v.ontwikkelweken[ow2] || 0) > 0).forEach(vak => {
             const count = vak.ontwikkelweken[ow2] || 0;
             const klassen = vak.klassen || [];
             klassen.forEach(klas => {
@@ -1791,7 +1791,7 @@ function renderKlassenCurriculum() {
                 </div>
                 <div class="periode-section lesuren-section">
                     <div class="periode-section-header">
-                        <h4>🕐 Lesuren per week</h4>
+                        <h4>🕐 Lesuren per week <small style="font-weight:normal;color:var(--text-muted)">(in klokuren)</small></h4>
                     </div>
                     <div class="lesuren-tabel">
                         <div class="uren-mini-header"><span>Klas</span><span>Basis</span><span>OW${ow1}</span><span>OW${ow2}</span></div>
