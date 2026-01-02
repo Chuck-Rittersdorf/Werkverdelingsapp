@@ -1038,11 +1038,284 @@ body {
     color: var(--text-muted);
 }
 
-/* Vakken grid container */
+/* BOT totaal row at bottom of leerjaar */
+.leerjaar-bot-totaal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: #10b981;
+    border-radius: var(--radius-sm);
+    margin-top: var(--space-sm);
+}
+
+.bot-totaal-label {
+    font-weight: 700;
+    color: white;
+    font-size: 0.85rem;
+}
+
+.bot-totaal-value {
+    font-weight: 700;
+    color: white;
+    font-size: 0.85rem;
+    font-family: 'SF Mono', monospace;
+    text-align: right;
+}
+
+/* Vakken grid container - now column layout for compact rows */
 .vakken-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-md);
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+/* Lesson table styling */
+.les-tabel {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin-bottom: var(--space-md);
+}
+
+.les-tabel thead th {
+    background: var(--bg-tertiary);
+    padding: var(--space-xs) var(--space-sm);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.les-tabel-naam {
+    text-align: left !important;
+    min-width: 200px;
+}
+
+.les-weken {
+    font-weight: 400;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.les-sub-header-row th {
+    background: var(--bg-secondary);
+    padding: 2px var(--space-xs);
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.les-tabel-row {
+    background: var(--bg-tertiary);
+    transition: background var(--transition-fast);
+}
+
+.les-tabel-row:hover {
+    background: var(--bg-secondary);
+}
+
+.les-tabel-row td {
+    padding: var(--space-xs) var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.les-tabel-naam-cel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 200px;
+    padding-left: var(--space-md) !important;
+}
+
+.les-kleur-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.les-naam {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+
+.les-cel-eenh,
+.les-cel-et,
+.les-cel-klok,
+.les-cel-tot,
+.les-cel-totaal,
+.les-cel-footer {
+    text-align: center;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.7rem;
+    padding: 2px 4px !important;
+    border-left: 1px solid var(--border-color);
+}
+
+.les-cel-eenh {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.les-cel-et {
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.les-cel-klok {
+    color: var(--text-secondary);
+}
+
+.les-cel-tot {
+    color: #10b981;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.les-cel-totaal {
+    color: #10b981;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Footer row styling */
+.les-tabel-footer-row {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.les-tabel-footer-row td {
+    padding: var(--space-xs) var(--space-sm);
+    border-top: 2px solid var(--border-color);
+}
+
+.les-tabel-footer-naam {
+    font-weight: 700;
+    color: #10b981;
+    text-align: right;
+}
+
+.les-cel-footer {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Footer period totals - green */
+.les-tabel-footer-row .les-cel-tot {
+    color: #10b981;
+}
+
+/* Footer final totaal cell - green and bold */
+.les-tabel-footer-row .les-cel-totaal {
+    color: #10b981;
+    font-weight: 700;
+}
+
+/* Toggle switch styling */
+.les-overzicht-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.les-overzicht-header h3 {
+    margin: 0;
+}
+
+.les-toggle-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.les-toggle-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.les-toggle-label.active {
+    color: var(--accent-primary);
+    font-weight: 700;
+}
+
+.les-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+
+.les-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.les-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-tertiary);
+    transition: var(--transition-fast);
+    border-radius: 22px;
+    border: 2px solid var(--border-color);
+}
+
+.les-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--accent-primary);
+    transition: var(--transition-fast);
+    border-radius: 50%;
+}
+
+.les-toggle-switch input:checked+.les-toggle-slider:before {
+    transform: translateX(18px);
+}
+
+/* Column visibility based on toggle */
+.show-eenheden .les-col-klok {
+    display: none;
+}
+
+.show-klokuren .les-col-eenh {
+    display: none;
+}
+
+.les-tabel-acties-cel {
+    text-align: right;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.les-tabel-row:hover .les-tabel-acties-cel {
+    opacity: 1;
+}
+
+.les-tabel-acties-cel button {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.les-tabel-acties-cel button:hover {
+    background: var(--bg-card);
 }
 
 .vak-klassen-row {
@@ -1097,6 +1370,12 @@ body {
 
 .vak-periodes {
     margin-top: var(--space-xs);
+}
+
+.vak-periodes-inline {
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-left: var(--space-sm);
 }
 
 .vak-periode-tabel {
@@ -1705,27 +1984,70 @@ body {
     background: rgba(16, 185, 129, 0.08);
 }
 
-.taak-selectie-checkbox {
-    width: 24px;
-    height: 24px;
+.taak-selectie-icon-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.taak-doc-icon-small {
+    width: 28px;
+    height: 34px;
+    border-radius: 3px 8px 3px 3px;
+    padding: 5px 4px;
+}
+
+.taak-doc-icon-small .taak-doc-fold {
+    width: 8px;
+    height: 8px;
+}
+
+.taak-doc-icon-small .taak-doc-lines {
+    gap: 2px;
+    padding-top: 5px;
+}
+
+.taak-doc-icon-small .taak-doc-lines span {
+    height: 1.5px;
+    border-radius: 1px;
+}
+
+.taak-selectie-checkbox-overlay {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    background: white;
     border: 2px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: bold;
+    color: transparent;
     transition: all var(--transition-fast);
-    background: var(--bg-card);
 }
 
-.taak-selectie-item.selected .taak-selectie-checkbox,
-.taak-selectie-item.voor-iedereen .taak-selectie-checkbox {
+.taak-selectie-item:hover .taak-selectie-checkbox-overlay:not(.checked) {
+    color: #aaa;
+}
+
+.taak-selectie-checkbox-overlay::before {
+    content: '✓';
+}
+
+.taak-selectie-checkbox-overlay.checked {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
     color: white;
 }
 
-.taak-selectie-item.voor-iedereen .taak-selectie-checkbox {
+.taak-selectie-checkbox-overlay.checked::before {
+    content: none;
+}
+
+.taak-selectie-item.voor-iedereen .taak-selectie-checkbox-overlay.checked {
     background: var(--success);
     border-color: var(--success);
 }
@@ -3013,11 +3335,26 @@ body {
     opacity: 1;
 }
 
+.docent-naam-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.docent-afkorting-label {
+    background: var(--accent-primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: lowercase;
+}
+
 .docent-naam-groot {
     font-size: 1rem;
     font-weight: 600;
-    color: #FF00FF;
-    padding-left: var(--space-sm);
+    color: var(--text-primary);
 }
 
 .docent-fte-grid {
@@ -3104,4 +3441,845 @@ body {
     display: block;
     font-size: 1rem;
     font-weight: 600;
+}
+
+/* ============================================
+   DASHBOARD NIVEAU SYSTEM
+   ============================================ */
+
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.dashboard-title h2 {
+    margin-bottom: 0;
+}
+
+/* Dashboard Niveau Tabs */
+.dashboard-niveau-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    background: var(--bg-card);
+    padding: var(--space-xs);
+    border-radius: var(--radius-lg);
+    width: fit-content;
+}
+
+.dashboard-niveau-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-lg);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.dashboard-niveau-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
+.dashboard-niveau-tab.active {
+    color: var(--text-primary);
+    background: var(--accent-gradient);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Niveau Containers */
+.dashboard-niveau {
+    display: none;
+}
+
+.dashboard-niveau.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* ============================================
+   NIVEAU 1: DUMMY PVI CARDS (Extended)
+   ============================================ */
+
+#dashboard-pvi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-md);
+}
+
+@media (min-width: 2560px) {
+    #dashboard-pvi-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.pvi-extended-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+
+.pvi-extended-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.pvi-extended-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pvi-extended-avatar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.pvi-extended-naam {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.pvi-extended-content {
+    padding: var(--space-md);
+}
+
+.pvi-extended-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--space-md);
+    align-items: center;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pvi-extended-row:last-child {
+    border-bottom: none;
+}
+
+.pvi-extended-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.pvi-extended-beschikbaar,
+.pvi-extended-geselecteerd {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: right;
+    min-width: 70px;
+}
+
+.pvi-extended-beschikbaar {
+    color: var(--text-muted);
+}
+
+.pvi-extended-geselecteerd {
+    color: var(--accent-primary);
+}
+
+.pvi-extended-verschil {
+    margin-top: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.pvi-extended-verschil.positief {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--success);
+}
+
+.pvi-extended-verschil.negatief {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+
+.pvi-extended-verschil.nul {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   DASHBOARD COMPACT HEADER
+   ============================================ */
+
+.dashboard-header-compact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.dashboard-header-compact h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.dashboard-niveau-tabs-compact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.dashboard-niveau-tabs-compact .dashboard-niveau-tab {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: var(--space-xs) var(--space-sm);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.dashboard-niveau-tabs-compact .dashboard-niveau-tab:hover {
+    color: var(--text-primary);
+}
+
+.dashboard-niveau-tabs-compact .dashboard-niveau-tab.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.tab-separator {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.dashboard-header-spacer {
+    flex: 1;
+}
+
+.dashboard-leerjaar-dropdown {
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.dashboard-leerjaar-dropdown:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+/* Dashboard Progress Bar */
+.dashboard-progress-container {
+    width: 200px;
+    height: 24px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    position: relative;
+}
+
+.dashboard-progress-bar {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: fit-content;
+}
+
+.dashboard-progress-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    padding: 0 var(--space-sm);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   NIVEAU 1: LESSEN OVERVIEW (Table Layout)
+   ============================================ */
+
+.dashboard-lessen-header {
+    padding: var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+}
+
+.dashboard-lessen-header .form-group {
+    margin-bottom: 0;
+    max-width: 250px;
+}
+
+.dashboard-lessen-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.lessen-leerjaar-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.lessen-leerjaar-header {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lessen-progress-badge {
+    background: #ffe9a0;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.lessen-progress-small {
+    color: #ffe9a0;
+    font-size: 0.625rem;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+/* Lessen Table Layout */
+.lessen-table {
+    width: 100%;
+}
+
+.lessen-table-header {
+    display: grid;
+    grid-template-columns: 80px repeat(4, 1fr);
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.lessen-header-klas {
+    padding: var(--space-sm) var(--space-md);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.lessen-header-periode {
+    padding: var(--space-sm) var(--space-md);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    text-align: center;
+    border-left: 1px solid var(--border-color);
+}
+
+.lessen-klas-row {
+    display: grid;
+    grid-template-columns: 80px repeat(4, 1fr);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lessen-klas-row:last-child {
+    border-bottom: none;
+}
+
+.lessen-klas-naam {
+    background: var(--bg-secondary);
+    padding: var(--space-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 2px;
+}
+
+.lessen-klas-progress {
+    color: #ffe9a0;
+    font-size: 0.625rem;
+    font-weight: 600;
+}
+
+.lessen-periode-cell {
+    padding: var(--space-sm);
+    border-left: 1px solid var(--border-color);
+    min-height: 80px;
+}
+
+.lessen-vak-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lessen-vak-row:last-child {
+    border-bottom: none;
+}
+
+.lessen-section {
+    display: flex;
+    margin-bottom: var(--space-xs);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.lessen-section:last-child {
+    margin-bottom: 0;
+}
+
+.lessen-section-sidebar {
+    width: 16px;
+    min-width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5rem;
+    font-weight: 700;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    text-transform: uppercase;
+}
+
+.lessen-section-content {
+    flex: 1;
+    padding: var(--space-xs);
+}
+
+.lessen-section-basis {
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.lessen-section-basis .lessen-section-sidebar {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.lessen-section-ow {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.lessen-section-ow .lessen-section-sidebar {
+    background: var(--warning);
+    color: #000;
+}
+
+.lessen-vak-titel {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding-left: var(--space-xs);
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.lessen-eenheden {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.lessen-eenheid {
+    width: 32px;
+    height: 20px;
+    border-radius: 3px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: default;
+    text-transform: lowercase;
+    overflow: hidden;
+}
+
+.lessen-empty {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+    display: block;
+    padding: var(--space-xs);
+}
+
+/* God's eye view - more compact */
+.lessen-godseye .lessen-table-header {
+    grid-template-columns: 60px repeat(4, 1fr);
+}
+
+.lessen-godseye .lessen-header-klas,
+.lessen-godseye .lessen-header-periode {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.625rem;
+}
+
+.lessen-godseye .lessen-klas-row {
+    grid-template-columns: 60px repeat(4, 1fr);
+}
+
+.lessen-godseye .lessen-klas-naam {
+    font-size: 0.75rem;
+    padding: var(--space-sm);
+}
+
+.lessen-godseye .lessen-periode-cell {
+    padding: var(--space-xs);
+    min-height: 60px;
+}
+
+.lessen-godseye .lessen-vak-row {
+    padding: 2px 0;
+}
+
+.lessen-godseye .lessen-vak-titel {
+    font-size: 0.625rem;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+}
+
+.lessen-godseye .lessen-eenheid {
+    width: 24px;
+    height: 16px;
+    font-size: 0.5rem;
+}
+
+/* ============================================
+   NIVEAU 2: TAKEN OVERVIEW (Compact Layout)
+   ============================================ */
+
+.dashboard-taken-grid {
+    padding: var(--space-md);
+}
+
+/* Taken Sections */
+.taken-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    margin-bottom: var(--space-md);
+    overflow: hidden;
+}
+
+.taken-section:last-child {
+    margin-bottom: 0;
+}
+
+.taken-section-overbezet {
+    border-left: 3px solid var(--warning);
+}
+
+.taken-section-onverdeeld {
+    border-left: 3px solid var(--danger);
+}
+
+.taken-section-verdeeld {
+    border-left: 3px solid var(--success);
+}
+
+.taken-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.taken-section-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.taken-section-overbezet .taken-section-title {
+    color: var(--warning);
+}
+
+.taken-section-onverdeeld .taken-section-title {
+    color: var(--danger);
+}
+
+.taken-section-verdeeld .taken-section-title {
+    color: var(--success);
+}
+
+.taken-section-count {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Taken Compact Header */
+.taken-compact-header {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px 150px;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* Taken Compact Row */
+.taken-compact-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px 150px;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    font-size: 0.8125rem;
+}
+
+.taken-compact-row:last-child {
+    border-bottom: none;
+}
+
+.taken-compact-row.onverdeeld {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.taken-compact-row.verdeeld {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.taken-compact-naam {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.taken-kleur-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.taken-compact-uren {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.taken-compact-max {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Taken Docent Blokjes */
+.taken-compact-docenten {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.taken-docent-blokje {
+    background: var(--accent-primary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: lowercase;
+}
+
+.taken-geen-docent {
+    color: var(--text-muted);
+}
+
+/* Taken Badges */
+.taken-badge {
+    margin-left: 4px;
+    font-size: 0.75rem;
+}
+
+.taken-badge-warning {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Max overschreden styling */
+.taken-compact-max.max-overschreden {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.taken-docent-blokje.overschreden {
+    background: var(--danger);
+}
+
+.taken-overview-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+
+.taken-overview-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.taken-overview-card.geselecteerd {
+    border-left: 3px solid var(--success);
+}
+
+.taken-overview-card.niet-geselecteerd {
+    border-left: 3px solid var(--text-muted);
+    opacity: 0.7;
+}
+
+.taken-overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.taken-overview-naam {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.taken-overview-status {
+    font-size: 0.75rem;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+}
+
+.taken-overview-status.geselecteerd {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.taken-overview-status.niet-geselecteerd {
+    background: var(--bg-card);
+    color: var(--text-muted);
+}
+
+.taken-overview-content {
+    padding: var(--space-md);
+}
+
+.taken-overview-uren {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+}
+
+.taken-uren-item {
+    text-align: center;
+    padding: var(--space-xs);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.taken-uren-label {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.taken-uren-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.taken-overview-docenten {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.taken-overview-docenten strong {
+    color: var(--text-primary);
+}
+
+.taken-overview-warning {
+    margin-top: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
 }

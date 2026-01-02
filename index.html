@@ -61,9 +61,6 @@
 
             <!-- Curriculum View -->
             <section class="view active" id="view-curriculum">
-                <div class="view-header">
-                    <h2>Lessenbeheer</h2>
-                </div>
 
                 <div class="curriculum-layout">
                     <!-- Left column: Forms -->
@@ -108,7 +105,7 @@
                             <form id="form-leerjaar">
                                 <div class="form-group">
                                     <label for="leerjaar-naam">Naam leerjaar</label>
-                                    <input type="text" id="leerjaar-naam" placeholder="bijv. CMD Leerjaar 1" required>
+                                    <input type="text" id="leerjaar-naam" placeholder="bijv. CMD Jaar 1" required>
                                     <small class="form-hint">Geef het leerjaar een unieke naam</small>
                                 </div>
                                 <div class="form-row-2">
@@ -287,7 +284,18 @@
 
                     <!-- Right column: Overview per leerjaar -->
                     <div class="card">
-                        <h3>📚 Lessenoverzicht</h3>
+                        <div class="les-overzicht-header">
+                            <h3>📚 Lessenoverzicht</h3>
+                            <div class="toggle-switch-container">
+                                <span class="toggle-label toggle-label-left active"
+                                    id="les-toggle-label-eenh">eenheden</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="les-weergave-toggle" onchange="toggleLesWeergave()">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label toggle-label-right" id="les-toggle-label-klok">klokuren</span>
+                            </div>
+                        </div>
                         <div id="vakken-lijst" class="vakken-lijst">
                         </div>
                     </div>
@@ -296,10 +304,6 @@
 
             <!-- Takenbeheer View -->
             <section class="view" id="view-takenbeheer">
-                <div class="view-header">
-                    <h2>Takenbeheer</h2>
-
-                </div>
 
                 <div class="curriculum-layout">
                     <!-- Left column: Forms -->
@@ -439,6 +443,17 @@
                                     </div>
                                 </div>
 
+                                <div class="form-group checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="taak-exact-docenten-check">
+                                        <span>Exact aantal teamleden voor deze taak</span>
+                                    </label>
+                                    <div id="taak-exact-docenten-container" style="display: none; margin-top: 0.5rem;">
+                                        <input type="number" id="taak-exact-docenten" min="1" value="1"
+                                            style="width: 80px;">
+                                    </div>
+                                </div>
+
                                 <button type="submit" class="btn btn-primary">
                                     <span>➕</span> Taak toevoegen
                                 </button>
@@ -458,10 +473,6 @@
 
             <!-- Docenten View -->
             <section class="view" id="view-docenten">
-                <div class="view-header">
-                    <h2>Teamledenbeheer</h2>
-
-                </div>
 
                 <div class="docenten-layout">
                     <div class="card form-card">
@@ -499,16 +510,13 @@
 
             <!-- Klassen View -->
             <section class="view" id="view-klassen">
-                <div class="view-header">
-                    <h2>Lessen</h2>
-                </div>
 
                 <div class="klassen-layout">
                     <!-- Selection Panel -->
                     <div class="card klassen-selectors">
                         <h3>🔍 Selectie</h3>
                         <div class="form-group">
-                            <label for="klassen-docent">Docent</label>
+                            <label for="klassen-docent">Teamlid</label>
                             <select id="klassen-docent" required>
                                 <option value="">-- Selecteer jezelf --</option>
                             </select>
@@ -559,17 +567,13 @@
 
             <!-- Taken View (Docent Task Selection) -->
             <section class="view" id="view-taken">
-                <div class="view-header">
-                    <h2>Taken Selecteren</h2>
-                    <p>Selecteer de taken die je wilt uitvoeren</p>
-                </div>
 
                 <div class="taken-layout">
                     <!-- Selection Panel -->
                     <div class="card taken-selectors">
                         <h3>🔍 Selectie</h3>
                         <div class="form-group">
-                            <label for="taken-docent">Docent</label>
+                            <label for="taken-docent">Teamlid</label>
                             <select id="taken-docent" required>
                                 <option value="">-- Selecteer jezelf --</option>
                             </select>
@@ -589,9 +593,8 @@
             <!-- Mijn Overzicht View -->
             <section class="view" id="view-verdeling">
                 <div class="view-header">
-                    <h2>Mijn Overzicht</h2>
                     <div class="docent-selector">
-                        <label for="select-docent">Docent:</label>
+                        <label for="select-docent">Teamlid:</label>
                         <select id="select-docent">
                             <option value="">-- Selecteer jezelf --</option>
                         </select>
@@ -617,45 +620,61 @@
 
             <!-- Dashboard View -->
             <section class="view" id="view-dashboard">
-                <div class="view-header dashboard-header">
-                    <div class="dashboard-title">
-                        <h2>Dashboard</h2>
-                        <div class="progress-overview">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar" id="progress-bar"></div>
-                            </div>
-                            <span class="progress-text" id="progress-text">0% verdeeld</span>
+                <div class="view-header dashboard-header-compact">
+                    <!-- Dashboard Niveau Tabs -->
+                    <div class="dashboard-niveau-tabs-compact">
+                        <button class="dashboard-niveau-tab active" data-niveau="1"
+                            onclick="switchDashboardNiveau(1)">Lessen</button>
+                        <span class="tab-separator">/</span>
+                        <button class="dashboard-niveau-tab" data-niveau="2"
+                            onclick="switchDashboardNiveau(2)">Taken</button>
+                        <span class="tab-separator">/</span>
+                        <button class="dashboard-niveau-tab" data-niveau="3" onclick="switchDashboardNiveau(3)">Dummy
+                            PvI's</button>
+                    </div>
+                    <!-- Spacer to push items to right -->
+                    <div class="dashboard-header-spacer"></div>
+                    <!-- Overall progress bar (only visible on Lessen tab) -->
+                    <div class="dashboard-progress-container" id="dashboard-progress-container">
+                        <div class="dashboard-progress-bar" id="dashboard-progress-bar">
+                            <span class="dashboard-progress-text" id="dashboard-progress-text">0% onderwijs
+                                verdeeld</span>
                         </div>
                     </div>
-                    <div class="dashboard-stats">
-                        <div class="stat">
-                            <span class="stat-value" id="stat-total">0</span>
-                            <span class="stat-label">Totaal</span>
+                    <!-- Taken progress bar (only visible on Taken tab) -->
+                    <div class="dashboard-progress-container" id="dashboard-taken-progress-container"
+                        style="display: none;">
+                        <div class="dashboard-progress-bar" id="dashboard-taken-progress-bar">
+                            <span class="dashboard-progress-text" id="dashboard-taken-progress-text">0% taken
+                                verdeeld</span>
                         </div>
-                        <div class="stat">
-                            <span class="stat-value" id="stat-verdeeld">0</span>
-                            <span class="stat-label">Verdeeld</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value" id="stat-resterend">0</span>
-                            <span class="stat-label">Resterend</span>
-                        </div>
-                        <div class="stat warning">
-                            <span class="stat-value" id="stat-conflicten">0</span>
-                            <span class="stat-label">Conflicten</span>
-                        </div>
+                    </div>
+                    <!-- Leerjaar dropdown (only visible on Lessen tab) -->
+                    <select id="dashboard-leerjaar-select" class="dashboard-leerjaar-dropdown"
+                        onchange="renderDashboardLessen()">
+                        <option value="alle">Alle leerjaren</option>
+                    </select>
+                </div>
+
+                <!-- Niveau 1: Lessen -->
+                <div class="dashboard-niveau active" id="dashboard-niveau-1">
+                    <div class="dashboard-lessen-grid" id="dashboard-lessen-grid">
+                        <p class="empty-state">Selecteer een leerjaar om het lessenoverzicht te zien</p>
                     </div>
                 </div>
 
-                <!-- Conflicts Alert -->
-                <div id="conflicten-container" class="conflicten-container" style="display:none;">
-                    <h3>⚠️ Conflicten</h3>
-                    <div id="conflicten-lijst"></div>
+                <!-- Niveau 2: Taken -->
+                <div class="dashboard-niveau" id="dashboard-niveau-2">
+                    <div class="dashboard-taken-grid" id="dashboard-taken-grid">
+                        <p class="empty-state">Nog geen taken aangemaakt</p>
+                    </div>
                 </div>
 
-                <!-- All Docents Grid - Full 4K view -->
-                <div class="dashboard-grid" id="dashboard-grid">
-                    <p class="empty-state">Voeg docenten toe om het dashboard te zien</p>
+                <!-- Niveau 3: Dummy PvI's -->
+                <div class="dashboard-niveau" id="dashboard-niveau-3">
+                    <div class="dashboard-grid" id="dashboard-pvi-grid">
+                        <p class="empty-state">Voeg docenten toe om het overzicht te zien</p>
+                    </div>
                 </div>
             </section>
 
@@ -875,6 +894,16 @@
                     </label>
                     <div id="edit-taak-max-docenten-container" style="display: none; margin-top: 0.5rem;">
                         <input type="number" id="edit-taak-max-docenten" min="1" value="1" style="width: 80px;">
+                    </div>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="edit-taak-exact-docenten-check">
+                        <span>Exact aantal teamleden voor deze taak</span>
+                    </label>
+                    <div id="edit-taak-exact-docenten-container" style="display: none; margin-top: 0.5rem;">
+                        <input type="number" id="edit-taak-exact-docenten" min="1" value="1" style="width: 80px;">
                     </div>
                 </div>
 
