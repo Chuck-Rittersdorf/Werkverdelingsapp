@@ -1154,7 +1154,7 @@ function saveToLocalStorage() {
         // Debounce slightly to avoid hammering Firestore on rapid edits
         if (window.saveTimeout) clearTimeout(window.saveTimeout);
         window.saveTimeout = setTimeout(() => {
-            smartSaveState().catch(err => console.error('Auto-save failed:', err));
+            saveTeamDataToFirestore().catch(err => console.error('Auto-save failed:', err));
         }, 500);
     }
 }
