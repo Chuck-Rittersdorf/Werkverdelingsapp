@@ -2367,25 +2367,31 @@ function updateTabVisibility() {
         const view = tab.getAttribute('data-view');
 
         if (role === 'admin') {
-            // Admin sees all tabs
+            // Admin sees all tabs - clear any inline style and class
             tab.classList.remove('role-hidden');
+            tab.style.display = '';
         } else if (role === 'teamleider' || role === 'onderwijsplanner') {
             // Teamleider/onderwijsplanner: all except Admin tab
             if (view === 'admin') {
                 tab.classList.add('role-hidden');
+                tab.style.display = 'none';
             } else {
                 tab.classList.remove('role-hidden');
+                tab.style.display = '';
             }
         } else if (role === 'teamlid') {
             // Teamlid only sees specific tabs
             if (teamlidVisibleViews.includes(view)) {
                 tab.classList.remove('role-hidden');
+                tab.style.display = '';
             } else {
                 tab.classList.add('role-hidden');
+                tab.style.display = 'none';
             }
         } else {
             // Unknown role - show all (fallback)
             tab.classList.remove('role-hidden');
+            tab.style.display = '';
         }
     });
 
