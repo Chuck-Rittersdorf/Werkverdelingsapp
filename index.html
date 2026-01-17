@@ -78,7 +78,7 @@
         <nav class="main-nav">
             <div class="nav-brand">
                 <img src="assets/logo-transparant.png" alt="" class="brand-logo">
-                <h1>Werkverdelingsapp</h1>
+                <h1>werkverdelingsapp</h1>
             </div>
             <div class="nav-tabs">
                 <button class="nav-tab" data-view="admin" data-role="admin" style="display:none">
@@ -93,11 +93,11 @@
                     <span class="tab-icon">📝</span>
                     Takenbeheer
                 </button>
-                <button class="nav-tab" data-view="docenten" style="display:none">
+                <button class="nav-tab active" data-view="docenten" style="display:none">
                     <span class="tab-icon">👥</span>
-                    Teamledenoverzicht
+                    Teamleden
                 </button>
-                <button class="nav-tab active" data-view="klassen">
+                <button class="nav-tab" data-view="klassen">
                     <span class="tab-icon">🏫</span>
                     Lessen
                 </button>
@@ -630,14 +630,11 @@
             </section>
 
             <!-- Docenten View -->
-            <section class="view" id="view-docenten">
+            <section class="view active" id="view-docenten">
 
                 <div class="docenten-layout">
                     <div class="card">
-                        <div class="section-header-with-subtitle">
-                            <h3>👥 Teamledenoverzicht</h3>
-                            <p class="admin-managed-by" id="admin-managed-by"></p>
-                        </div>
+
                         <div id="docenten-lijst" class="docenten-lijst">
                             <p class="empty-state">Nog geen teamleden toegevoegd.</p>
                         </div>
@@ -646,7 +643,7 @@
             </section>
 
             <!-- Klassen View -->
-            <section class="view active" id="view-klassen">
+            <section class="view" id="view-klassen">
 
                 <div class="klassen-layout">
                     <!-- Selection Panel -->
@@ -785,11 +782,22 @@
                                 verdeeld</span>
                         </div>
                     </div>
-                    <!-- Leerjaar dropdown (only visible on Lessen tab) -->
-                    <select id="dashboard-leerjaar-select" class="dashboard-leerjaar-dropdown"
-                        onchange="renderDashboardLessen()">
-                        <option value="alle">Alle leerjaren</option>
-                    </select>
+                    <!-- Filter dropdowns -->
+                    <div class="dashboard-filters">
+                        <select id="filter-leerjaar" class="dashboard-filter-dropdown"
+                            onchange="updateFilterKlassen(); renderDashboardLessen()">
+                            <option value="alle">Alle leerjaren</option>
+                        </select>
+                        <select id="filter-klas" class="dashboard-filter-dropdown" onchange="renderDashboardLessen()">
+                            <option value="alle">Alle klassen</option>
+                        </select>
+                        <select id="filter-weektype" class="dashboard-filter-dropdown"
+                            onchange="renderDashboardLessen()">
+                            <option value="alle">Alle weken</option>
+                            <option value="basis">Basisweken</option>
+                            <option value="ow">Ontwikkelweken</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Niveau 1: Lessen -->
@@ -1274,11 +1282,10 @@
             </div>
             <form id="login-form" class="login-form" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label for="login-afkorting">Afkorting</label>
-                    <input type="text" id="login-afkorting" placeholder="bijv. fwals" required autocomplete="username">
+                    <input type="text" id="login-afkorting" placeholder="afkorting (bijv. fwals)" required
+                        autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">Wachtwoord</label>
                     <input type="password" id="login-password" placeholder="••••••••" required
                         autocomplete="current-password">
                 </div>

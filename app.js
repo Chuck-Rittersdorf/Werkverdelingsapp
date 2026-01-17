@@ -2089,6 +2089,9 @@ function renderAll() {
     if (typeof renderKlassenView === 'function') renderKlassenView();
     if (typeof renderVerdelingView === 'function') renderVerdelingView();
     if (typeof renderDashboard === 'function') renderDashboard();
+
+    // Default to Teamleden view
+    switchTab('docenten');
 }
 
 // ============================================
@@ -2745,6 +2748,13 @@ function toggleLesWeergave() {
     }
 }
 window.toggleLesWeergave = toggleLesWeergave;
+
+// Toggle to hide/show ontwikkelweken in Lessen grid
+function toggleOntwikkelweken() {
+    // Re-render the dashboard lessen grid with the filter applied
+    renderDashboardLessen();
+}
+window.toggleOntwikkelweken = toggleOntwikkelweken;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -4008,11 +4018,28 @@ async function updateAdminManagedBy() {
     }
 }
 
-function renderDocentenLijst() {
+async function renderDocentenLijst() {
     const container = document.getElementById('docenten-lijst');
 
-    // Update admin names in header
-    updateAdminManagedBy();
+    // Fetch admins for managed-by tooltip
+    let adminNames = '';
+    try {
+        const { collection, getDocs } = window.firebaseFunctions;
+        const db = window.firebaseDb;
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const admins = [];
+        usersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            if (userData.rol === 'admin') {
+                admins.push(userData.afkorting || userData.naam || 'Admin');
+            }
+        });
+        if (admins.length > 0) {
+            adminNames = `Leden worden beheerd door: ${admins.join(', ')}`;
+        }
+    } catch (e) {
+        console.error('Error fetching admins for tooltip:', e);
+    }
 
     if (!state.docenten || state.docenten.length === 0) {
         container.innerHTML = '<p class="empty-state">Nog geen teamleden toegevoegd.</p>';
@@ -4022,10 +4049,19 @@ function renderDocentenLijst() {
     // Constants for FTE calculation
     const BESCHIKBAAR_PER_FTE = 1600; // 1659 - 59 uur deskundigheidsbevordering
 
-    // Sort docenten by naam
-    const sortedDocenten = [...state.docenten].sort((a, b) =>
-        (a.naam || '').localeCompare(b.naam || '')
-    );
+    // Sort docenten by naam, but put current user first
+    const currentDocentId = getCurrentUserDocentId();
+    const sortedDocenten = [...state.docenten].sort((a, b) => {
+        if (a.id === currentDocentId) return -1;
+        if (b.id === currentDocentId) return 1;
+
+        // Sort by name/abbreviation starting from the second letter (index 1)
+        // User refers to "fwals" as the name to sort on, which is usually in .naam property
+        const nameA = (a.naam || a.afkorting || '').slice(1).toLowerCase();
+        const nameB = (b.naam || b.afkorting || '').slice(1).toLowerCase();
+
+        return nameA.localeCompare(nameB);
+    });
 
     container.innerHTML = sortedDocenten.map(docent => {
         // Get FTE values with defaults for backward compatibility
@@ -4044,8 +4080,12 @@ function renderDocentenLijst() {
         const displayName = escapeHtml(docent.naam || docent.afkorting || 'Onbekend');
         const afkorting = displayName.substring(0, 3).toLowerCase();
 
+
+        const isCurrentUser = docent.id === currentDocentId;
+        const cardClass = isCurrentUser ? 'docent-card active-user-card' : 'docent-card';
+
         return `
-            <div class="docent-card">
+            <div class="${cardClass}" title="${escapeHtml(adminNames)}">
                 <div class="docent-header">
                     <div class="docent-naam-container">
                         <span class="docent-afkorting-label">${afkorting}</span>
@@ -6150,29 +6190,76 @@ function exportPviToExcel() {
 // NIVEAU 1: LESSEN COMPACT OVERVIEW
 // ============================================
 
-function updateDashboardLeerjaarSelector() {
-    const select = document.getElementById('dashboard-leerjaar-select');
+// Update leerjaar filter dropdown
+function updateFilterLeerjaren() {
+    const select = document.getElementById('filter-leerjaar');
     if (!select) return;
 
-    // Build unique leerjaar names
     const leerjaarNamen = [...new Set(state.leerjaren.map(l => l.naam))];
+    const currentValue = select.value;
 
     select.innerHTML = '<option value="alle">Alle leerjaren</option>' +
         leerjaarNamen.map(naam => `<option value="${naam}">${naam}</option>`).join('');
 
-    select.value = dashboardState.selectedLeerjaar;
+    // Restore selection if still valid
+    if (leerjaarNamen.includes(currentValue)) {
+        select.value = currentValue;
+    }
 }
 
-function renderDashboardLessen() {
-    // First, read and save the selected value BEFORE re-rendering the dropdown
-    const selectedLeerjaar = document.getElementById('dashboard-leerjaar-select')?.value || 'alle';
-    dashboardState.selectedLeerjaar = selectedLeerjaar;
+// Update klas filter dropdown based on selected leerjaar
+function updateFilterKlassen() {
+    const leerjaarSelect = document.getElementById('filter-leerjaar');
+    const klasSelect = document.getElementById('filter-klas');
+    if (!klasSelect) return;
 
-    // Now update the dropdown (this will preserve the selection since dashboardState is already updated)
-    updateDashboardLeerjaarSelector();
+    const selectedLeerjaar = leerjaarSelect?.value || 'alle';
+    const currentKlasValue = klasSelect.value;
+
+    let klassen = [];
+    if (selectedLeerjaar === 'alle') {
+        // Get all klassen from all leerjaren
+        state.leerjaren.forEach(l => {
+            (l.klassen || []).forEach(k => {
+                if (!klassen.includes(k)) klassen.push(k);
+            });
+        });
+    } else {
+        // Get klassen from selected leerjaar only
+        const leerjaar = state.leerjaren.find(l => l.naam === selectedLeerjaar);
+        klassen = leerjaar?.klassen || [];
+    }
+
+    klassen.sort();
+
+    klasSelect.innerHTML = '<option value="alle">Alle klassen</option>' +
+        klassen.map(k => `<option value="${k}">${k}</option>`).join('');
+
+    // Restore selection if still valid
+    if (klassen.includes(currentKlasValue)) {
+        klasSelect.value = currentKlasValue;
+    } else {
+        klasSelect.value = 'alle';
+    }
+}
+window.updateFilterKlassen = updateFilterKlassen;
+
+function renderDashboardLessen() {
+    // Update filter dropdowns
+    updateFilterLeerjaren();
+    updateFilterKlassen();
+
+    // Read filter values
+    const selectedLeerjaar = document.getElementById('filter-leerjaar')?.value || 'alle';
+    const selectedKlas = document.getElementById('filter-klas')?.value || 'alle';
+    const selectedWeektype = document.getElementById('filter-weektype')?.value || 'alle';
+
+    // Store in dashboard state for use in row rendering
+    dashboardState.selectedLeerjaar = selectedLeerjaar;
+    dashboardState.selectedKlas = selectedKlas;
+    dashboardState.selectedWeektype = selectedWeektype;
 
     const container = document.getElementById('dashboard-lessen-grid');
-    const currentSelection = dashboardState.selectedLeerjaar;
 
     if (state.leerjaren.length === 0) {
         container.innerHTML = '<p class="empty-state">Nog geen leerjaren aangemaakt</p>';
@@ -6187,7 +6274,13 @@ function renderDashboardLessen() {
         : state.leerjaren.filter(l => l.naam === selectedLeerjaar);
 
     container.innerHTML = leerjarenToShow.map(leerjaar => {
-        const klassen = leerjaar.klassen || [];
+        // Filter klassen if specific klas is selected
+        let klassen = leerjaar.klassen || [];
+        if (selectedKlas !== 'alle') {
+            klassen = klassen.filter(k => k === selectedKlas);
+        }
+        if (klassen.length === 0) return ''; // Skip leerjaar if no matching klassen
+
         const leerjaarVakken = state.vakken.filter(v => v.leerjaar === leerjaar.naam);
 
         // Calculate leerjaar percentage
@@ -6203,7 +6296,14 @@ function renderDashboardLessen() {
         return `
             <div class="lessen-leerjaar-section ${isGodseye ? 'lessen-godseye' : ''}">
                 <div class="lessen-leerjaar-header">
-                    🎓 ${escapeHtml(leerjaar.naam)}
+                    <span class="lessen-leerjaar-naam">🎓 ${escapeHtml(leerjaar.naam)}</span>
+                    <div class="lessen-klas-summary">
+                        ${klassen.map(klas => {
+            const klasStats = calculateKlasProgress(leerjaar.naam, klas, leerjaarVakken);
+            const klasPct = klasStats.total > 0 ? Math.round((klasStats.selected / klasStats.total) * 100) : 0;
+            return `<span class="lessen-klas-summary-item">${klas} <span class="lessen-klas-summary-pct">${klasPct}%</span></span>`;
+        }).join('')}
+                    </div>
                     <span class="lessen-progress-badge">${leerjaarPct}%</span>
                 </div>
                 <div class="lessen-table">
@@ -6406,117 +6506,207 @@ function renderLessenKlasRow(klas, leerjaarNaam, klasPct) {
         .filter(v => v.leerjaar === leerjaarNaam)
         .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
-    const periodeHTML = [1, 2, 3, 4].map(periode => {
+    // Get weektype filter from dashboard state
+    const selectedWeektype = dashboardState.selectedWeektype || 'alle';
+    const showBasis = selectedWeektype === 'alle' || selectedWeektype === 'basis';
+    const showOW = selectedWeektype === 'alle' || selectedWeektype === 'ow';
+
+    // Helper to build cell content for a specific type and period
+    function buildPeriodeCell(type, periode) {
         const ow1 = (periode - 1) * 2 + 1;
         const ow2 = (periode - 1) * 2 + 2;
 
-        // Build BASISWEKEN rows
-        const basisRows = leerjaarVakken.map(vak => {
-            const periodeEenheden = vak.periodes?.[periode] || 0;
-            if (periodeEenheden === 0) return '';
+        let rows = '';
 
-            const basisBlokjes = [];
-            for (let i = 1; i <= periodeEenheden; i++) {
-                const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
-                const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
-                const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
-                const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
-                const docentNaam = docent ? docent.naam : 'Beschikbaar';
-                const isGeselecteerd = !!toewijzing;
-                basisBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, false));
-            }
+        if (type === 'basis') {
+            rows = leerjaarVakken.map(vak => {
+                const periodeEenheden = vak.periodes?.[periode] || 0;
+                if (periodeEenheden === 0) return '';
 
-            return `
-                <div class="lessen-vak-row">
-                    <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
-                    <div class="lessen-eenheden">${basisBlokjes.join('')}</div>
-                </div>
-            `;
-        }).filter(row => row !== '').join('');
+                const basisBlokjes = [];
+                for (let i = 1; i <= periodeEenheden; i++) {
+                    const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
+                    const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
+                    const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
+                    const docentNaam = docent ? docent.naam : 'Beschikbaar';
+                    const isGeselecteerd = !!toewijzing;
+                    basisBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, false));
+                }
 
-        // Build OW1 rows
-        const ow1Rows = leerjaarVakken.map(vak => {
-            const ow1Eenheden = vak.ontwikkelweken?.[ow1] || 0;
-            if (ow1Eenheden === 0) return '';
+                return `
+                    <div class="lessen-vak-row">
+                        <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
+                        <div class="lessen-eenheden">${basisBlokjes.join('')}</div>
+                    </div>
+                `;
+            }).filter(row => row !== '').join('');
+        } else if (type === 'ow1') {
+            const owNum = ow1;
+            rows = leerjaarVakken.map(vak => {
+                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                if (owEenheden === 0) return '';
 
-            const owBlokjes = [];
-            for (let i = 1; i <= ow1Eenheden; i++) {
-                const blokjeId = `${vak.id}-${klas}-OW${ow1}-${i}`;
-                const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
-                const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
-                const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
-                const docentNaam = docent ? docent.naam : 'Beschikbaar';
-                const isGeselecteerd = !!toewijzing;
-                owBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, true));
-            }
+                const owBlokjes = [];
+                for (let i = 1; i <= owEenheden; i++) {
+                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
+                    const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
+                    const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
+                    const docentNaam = docent ? docent.naam : 'Beschikbaar';
+                    const isGeselecteerd = !!toewijzing;
+                    owBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, true));
+                }
 
-            return `
-                <div class="lessen-vak-row">
-                    <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
-                    <div class="lessen-eenheden">${owBlokjes.join('')}</div>
-                </div>
-            `;
-        }).filter(row => row !== '').join('');
+                return `
+                    <div class="lessen-vak-row">
+                        <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
+                        <div class="lessen-eenheden">${owBlokjes.join('')}</div>
+                    </div>
+                `;
+            }).filter(row => row !== '').join('');
+        } else if (type === 'ow2') {
+            const owNum = ow2;
+            rows = leerjaarVakken.map(vak => {
+                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                if (owEenheden === 0) return '';
 
-        // Build OW2 rows
-        const ow2Rows = leerjaarVakken.map(vak => {
-            const ow2Eenheden = vak.ontwikkelweken?.[ow2] || 0;
-            if (ow2Eenheden === 0) return '';
+                const owBlokjes = [];
+                for (let i = 1; i <= owEenheden; i++) {
+                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
+                    const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
+                    const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
+                    const docentNaam = docent ? docent.naam : 'Beschikbaar';
+                    const isGeselecteerd = !!toewijzing;
+                    owBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, true));
+                }
 
-            const owBlokjes = [];
-            for (let i = 1; i <= ow2Eenheden; i++) {
-                const blokjeId = `${vak.id}-${klas}-OW${ow2}-${i}`;
-                const toewijzing = state.toewijzingen.find(t => t.blokjeId === blokjeId);
-                const docent = toewijzing ? state.docenten.find(d => d.id === toewijzing.docentId) : null;
-                const docentAfkorting = docent ? docent.naam.substring(0, 3).toLowerCase() : '';
-                const docentNaam = docent ? docent.naam : 'Beschikbaar';
-                const isGeselecteerd = !!toewijzing;
-                owBlokjes.push(renderEenheidBlokje(vak.kleur, isGeselecteerd, docentAfkorting, docentNaam, true));
-            }
-
-            return `
-                <div class="lessen-vak-row">
-                    <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
-                    <div class="lessen-eenheden">${owBlokjes.join('')}</div>
-                </div>
-            `;
-        }).filter(row => row !== '').join('');
-
-        // Build content with sections (header as vertical sidebar)
-        let content = '';
-        if (basisRows) {
-            content += `<div class="lessen-section lessen-section-basis">
-                <div class="lessen-section-sidebar" title="Basisweken">B</div>
-                <div class="lessen-section-content">${basisRows}</div>
-            </div>`;
-        }
-        if (ow1Rows) {
-            content += `<div class="lessen-section lessen-section-ow">
-                <div class="lessen-section-sidebar" title="Ontwikkelweek ${ow1}">${ow1}</div>
-                <div class="lessen-section-content">${ow1Rows}</div>
-            </div>`;
-        }
-        if (ow2Rows) {
-            content += `<div class="lessen-section lessen-section-ow">
-                <div class="lessen-section-sidebar" title="Ontwikkelweek ${ow2}">${ow2}</div>
-                <div class="lessen-section-content">${ow2Rows}</div>
-            </div>`;
+                return `
+                    <div class="lessen-vak-row">
+                        <span class="lessen-vak-titel" style="border-left: 3px solid ${vak.kleur}" title="${escapeHtml(vak.naam)}">${escapeHtml(vak.naam)}</span>
+                        <div class="lessen-eenheden">${owBlokjes.join('')}</div>
+                    </div>
+                `;
+            }).filter(row => row !== '').join('');
         }
 
-        return `
-            <div class="lessen-periode-cell">
-                ${content || '<span class="lessen-empty">-</span>'}
-            </div>
-        `;
-    }).join('');
+        return rows || '<span class="lessen-empty">-</span>';
+    }
+
+    // Build separate rows for basis, OW1, OW2
+    const basisRowCells = showBasis ? [1, 2, 3, 4].map(p => `<div class="lessen-periode-cell">${buildPeriodeCell('basis', p)}</div>`).join('') : '';
+
+    // Build OW rows (only if showing OW)
+    let ow1RowCells = '';
+    let ow2RowCells = '';
+
+    if (showOW) {
+        ow1RowCells = [1, 2, 3, 4].map(p => `<div class="lessen-periode-cell">${buildPeriodeCell('ow1', p)}</div>`).join('');
+        ow2RowCells = [1, 2, 3, 4].map(p => `<div class="lessen-periode-cell">${buildPeriodeCell('ow2', p)}</div>`).join('');
+    }
+
+    // Check if OW rows have any content
+    const hasOW1 = showOW && [1, 2, 3, 4].some(p => {
+        const owNum = (p - 1) * 2 + 1;
+        return leerjaarVakken.some(v => (v.ontwikkelweken?.[owNum] || 0) > 0);
+    });
+    const hasOW2 = showOW && [1, 2, 3, 4].some(p => {
+        const owNum = (p - 1) * 2 + 2;
+        return leerjaarVakken.some(v => (v.ontwikkelweken?.[owNum] || 0) > 0);
+    });
+
+    // Calculate percentage for BASIS only
+    function calcBasisPct() {
+        let total = 0, selected = 0;
+        [1, 2, 3, 4].forEach(periode => {
+            leerjaarVakken.forEach(vak => {
+                const periodeEenheden = vak.periodes?.[periode] || 0;
+                for (let i = 1; i <= periodeEenheden; i++) {
+                    total++;
+                    const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
+                    if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                }
+            });
+        });
+        return total > 0 ? Math.round((selected / total) * 100) : 0;
+    }
+
+    // Calculate percentage for OW1 only
+    function calcOW1Pct() {
+        let total = 0, selected = 0;
+        [1, 2, 3, 4].forEach(periode => {
+            const owNum = (periode - 1) * 2 + 1;
+            leerjaarVakken.forEach(vak => {
+                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                for (let i = 1; i <= owEenheden; i++) {
+                    total++;
+                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                }
+            });
+        });
+        return total > 0 ? Math.round((selected / total) * 100) : 0;
+    }
+
+    // Calculate percentage for OW2 only
+    function calcOW2Pct() {
+        let total = 0, selected = 0;
+        [1, 2, 3, 4].forEach(periode => {
+            const owNum = (periode - 1) * 2 + 2;
+            leerjaarVakken.forEach(vak => {
+                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                for (let i = 1; i <= owEenheden; i++) {
+                    total++;
+                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                }
+            });
+        });
+        return total > 0 ? Math.round((selected / total) * 100) : 0;
+    }
+
+    const basisPct = calcBasisPct();
+    const ow1Pct = calcOW1Pct();
+    const ow2Pct = calcOW2Pct();
+
+    // Check if basis row has content
+    const hasBasis = showBasis && [1, 2, 3, 4].some(p => {
+        return leerjaarVakken.some(v => (v.periodes?.[p] || 0) > 0);
+    });
 
     return `
-        <div class="lessen-klas-row">
-            <div class="lessen-klas-naam">
-                ${klas}
-                <span class="lessen-klas-progress">${klasPct}%</span>
+        <div class="lessen-klas-group">
+            ${hasBasis ? `
+            <div class="lessen-klas-row lessen-klas-row-basis">
+                <div class="lessen-klas-naam">
+                    ${klas}
+                    <span class="lessen-row-type lessen-row-type-basis">BASIS</span>
+                    <span class="lessen-klas-progress">${basisPct}%</span>
+                </div>
+                ${basisRowCells}
             </div>
-            ${periodeHTML}
+            ` : ''}
+            ${hasOW1 ? `
+            <div class="lessen-klas-row lessen-klas-row-ow">
+                <div class="lessen-klas-naam lessen-klas-naam-sub">
+                    ${klas}
+                    <span class="lessen-row-type lessen-row-type-ow">OW1</span>
+                    <span class="lessen-klas-progress">${ow1Pct}%</span>
+                </div>
+                ${ow1RowCells}
+            </div>
+            ` : ''}
+            ${hasOW2 ? `
+            <div class="lessen-klas-row lessen-klas-row-ow">
+                <div class="lessen-klas-naam lessen-klas-naam-sub">
+                    ${klas}
+                    <span class="lessen-row-type lessen-row-type-ow">OW2</span>
+                    <span class="lessen-klas-progress">${ow2Pct}%</span>
+                </div>
+                ${ow2RowCells}
+            </div>
+            ` : ''}
         </div>
     `;
 }

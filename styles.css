@@ -111,15 +111,20 @@ body {
     width: 40px;
     height: 40px;
     object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
 }
 
 .nav-brand h1 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: 'Albert Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #ffffff;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+    background-clip: unset;
+    text-shadow: 1px 1px 0 #8b5cf6, -1px -1px 0 #10b981, 0 0 10px rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.5px;
 }
 
 .nav-tabs {
@@ -139,7 +144,11 @@ body {
     border: none;
     color: var(--text-secondary);
     font-size: 0.8rem;
-    font-weight: 500;
+    font-family: 'Albert Sans', sans-serif;
+    text-transform: uppercase;
+    font-weight: 400;
+    /* Regular weight */
+    letter-spacing: 0.5px;
     cursor: pointer;
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
@@ -154,10 +163,15 @@ body {
     color: var(--text-primary);
     background: var(--accent-gradient);
     box-shadow: var(--shadow-sm);
+    /* For active tab, maybe add the outline effect if desired, or keep gradient background?
+       User said "hetzelfde opmaken", but active tab usually has a background.
+       I'll keep the background for now as it indicates active state clearly.
+       Adding text-shadow on top of gradient might be messy. */
 }
 
 .tab-icon {
-    font-size: 1rem;
+    display: none;
+    /* Hide icons */
 }
 
 .nav-actions {
@@ -3427,7 +3441,7 @@ body {
 
 .login-header {
     padding: var(--space-md) var(--space-lg) var(--space-sm);
-    background: var(--accent-gradient);
+    background: var(--bg-secondary);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin: calc(var(--space-md) * -1);
     margin-bottom: var(--space-md);
@@ -3444,7 +3458,7 @@ body {
     height: 180px;
     margin-bottom: var(--space-xs);
     object-fit: contain;
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3)) drop-shadow(0 0 40px rgba(99, 102, 241, 0.4));
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
 }
 
 .login-header h2 {
@@ -3473,25 +3487,19 @@ body {
 
 .login-form .form-group {
     text-align: left;
-    margin-bottom: var(--space-md);
-}
-
-.login-form label {
-    display: block;
-    margin-bottom: var(--space-xs);
-    font-weight: 500;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+    margin-bottom: 12px;
 }
 
 .login-form input {
     width: 100%;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-sm);
+    height: 40px;
+    /* Fixed smaller height */
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -3503,13 +3511,19 @@ body {
 
 .login-form input::placeholder {
     color: var(--text-muted);
+    font-size: 0.9rem;
 }
 
 .btn-login {
     width: 100%;
-    padding: var(--space-md);
-    font-size: 1rem;
-    margin-top: var(--space-sm);
+    height: 40px;
+    /* Match input height */
+    padding: 0 var(--space-sm);
+    font-size: 0.95rem;
+    margin-top: var(--space-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .login-error {
@@ -3728,6 +3742,20 @@ body {
     padding-bottom: var(--space-sm);
     border-bottom: 1px solid var(--border-color);
 }
+
+.docent-card.active-user-card {
+    background: rgba(251, 191, 36, 0.08);
+    /* slightly more transparent for whole card */
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2), 0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.docent-card.active-user-card .docent-naam-groot {
+    color: #fbbf24;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+
 
 .docent-actions {
     display: flex;
@@ -4302,6 +4330,27 @@ body {
     border-color: var(--accent-primary);
 }
 
+.dashboard-filters {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.dashboard-filter-dropdown {
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.dashboard-filter-dropdown:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
 /* Dashboard Progress Bar */
 .dashboard-progress-container {
     width: 200px;
@@ -4403,6 +4452,26 @@ body {
     border-bottom: 2px solid var(--border-color);
 }
 
+.lessen-klas-summary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    flex: 1;
+}
+
+.lessen-klas-summary-item {
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.lessen-klas-summary-pct {
+    color: #ffe9a0;
+    font-size: 0.75rem;
+    margin-left: 4px;
+}
+
 .lessen-header-klas {
     padding: var(--space-sm) var(--space-md);
     font-weight: 600;
@@ -4421,6 +4490,14 @@ body {
     border-left: 1px solid var(--border-color);
 }
 
+.lessen-klas-group {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.lessen-klas-group:last-child {
+    border-bottom: none;
+}
+
 .lessen-klas-row {
     display: grid;
     grid-template-columns: 80px repeat(4, 1fr);
@@ -4429,6 +4506,35 @@ body {
 
 .lessen-klas-row:last-child {
     border-bottom: none;
+}
+
+.lessen-klas-row-ow {
+    background: rgba(139, 92, 246, 0.03);
+}
+
+.lessen-klas-naam-sub {
+    background: rgba(139, 92, 246, 0.1);
+    font-size: 0.75rem;
+}
+
+.lessen-row-type {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.lessen-row-type-basis {
+    background: var(--accent-primary);
+    color: white;
+    opacity: 1;
+}
+
+.lessen-row-type-ow {
+    background: var(--warning);
+    color: #000;
+    opacity: 1;
 }
 
 .lessen-klas-naam {
