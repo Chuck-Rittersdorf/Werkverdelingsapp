@@ -111,10 +111,6 @@
                     <span class="tab-icon">📊</span>
                     Dashboard
                 </button>
-                <button class="nav-tab nav-tab-logout" id="btn-logout" onclick="handleLogout()" title="Uitloggen">
-                    <span class="tab-icon">�</span>
-                    Uitloggen
-                </button>
             </div>
         </nav>
 
@@ -123,12 +119,8 @@
 
             <!-- Admin View -->
             <section class="view active" id="view-admin">
-                <div class="view-header admin-view-header">
-                    <div>
-                        <h2>⚙️ Beheer</h2>
-                        <p class="view-subtitle">Opslaan, laden en exporteren van werkverdelingsdata</p>
-                    </div>
-                    <!-- Team Switcher (only for admins) -->
+                <!-- Team Switcher at top right -->
+                <div class="admin-top-bar">
                     <div class="team-switcher" id="team-switcher" style="display: none;">
                         <label>Actief team:</label>
                         <select id="active-team-select" onchange="switchActiveTeam(this.value)">
@@ -137,123 +129,86 @@
                     </div>
                 </div>
 
-                <div class="admin-layout">
-                    <!-- Save States -->
-                    <div class="card admin-card">
-                        <h3>💾 Opgeslagen States</h3>
-                        <p class="card-hint">Maak snapshots van je huidige data en laad ze later weer in.</p>
-
-                        <div class="admin-save-form">
-                            <div class="form-row">
-                                <input type="text" id="save-state-name"
-                                    placeholder="Naam voor deze state (bijv. 'Backup januari')">
-                                <button class="btn btn-primary" onclick="smartSaveState()">
-                                    <span>💾</span> State Opslaan
-                                </button>
-                            </div>
+                <div class="admin-layout-clean">
+                    <!-- LEFT COLUMN: Users -->
+                    <div class="admin-main-section">
+                        <div class="admin-section-header">
+                            <h3>👥 Gebruikers</h3>
                         </div>
 
-                        <div id="saved-states-list" class="saved-states-list">
-                            <p class="empty-state">Geen opgeslagen states</p>
-                        </div>
-                    </div>
-
-                    <!-- Import/Export -->
-                    <div class="card admin-card">
-                        <h3>📤 Importeren / Exporteren</h3>
-                        <p class="card-hint">Exporteer data naar JSON bestand of importeer eerder geëxporteerde data.
-                        </p>
-
-                        <div class="admin-actions-grid">
-                            <div class="admin-action-item">
-                                <h4>Exporteren</h4>
-                                <p>Download de huidige data als JSON bestand</p>
-                                <button class="btn btn-secondary" onclick="exportToFile()">
-                                    <span>📥</span> Download JSON
-                                </button>
-                            </div>
-                            <div class="admin-action-item">
-                                <h4>Importeren</h4>
-                                <p>Laad data uit een eerder geëxporteerd JSON bestand</p>
-                                <input type="file" id="import-file-input" accept=".json" style="display:none"
-                                    onchange="importFromFile(event)">
-                                <button class="btn btn-secondary"
-                                    onclick="document.getElementById('import-file-input').click()">
-                                    <span>📤</span> Importeer JSON
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Team Management -->
-                    <div class="card admin-card">
-                        <h3>🏢 Teambeheer</h3>
-                        <p class="card-hint">Maak nieuwe teams aan of bekijk bestaande teams.</p>
-
-                        <div class="admin-team-form">
+                        <div class="admin-form-compact">
                             <div class="form-row">
-                                <input type="text" id="new-team-id" placeholder="Team ID (bijv. CMD)">
-                                <input type="text" id="new-team-name"
-                                    placeholder="Team naam (bijv. Communicatie & Media Design)">
-                                <button class="btn btn-primary btn-sm" onclick="createNewTeam()">
-                                    <span>➕</span> Team Aanmaken
-                                </button>
-                            </div>
-                        </div>
-
-                        <h4 style="margin-top: var(--space-lg);">Bestaande teams</h4>
-                        <div id="teams-list" class="teams-list">
-                            <p class="empty-state">Laden...</p>
-                        </div>
-                    </div>
-
-                    <!-- User Management -->
-                    <div class="card admin-card">
-                        <h3>👥 Gebruikersbeheer</h3>
-                        <p class="card-hint">Voeg nieuwe gebruikers toe en beheer teamtoewijzingen.</p>
-
-                        <div class="admin-user-form">
-                            <div class="form-row">
-                                <input type="text" id="new-user-afkorting" placeholder="Afkorting (bijv. fwals)">
-                                <input type="password" id="new-user-password" placeholder="Wachtwoord (min. 6 tekens)">
-                            </div>
-                            <div class="form-row">
-                            </div>
-                            <div class="form-row">
+                                <input type="text" id="new-user-afkorting" placeholder="Afkorting">
+                                <input type="password" id="new-user-password" placeholder="Wachtwoord">
                                 <select id="new-user-team">
-                                    <option value="">-- Selecteer team --</option>
+                                    <option value="">Team</option>
                                 </select>
                                 <select id="new-user-role">
                                     <option value="teamlid">Teamlid</option>
                                     <option value="teamleider">Teamleider</option>
-                                    <option value="onderwijsplanner">Onderwijsplanner</option>
+                                    <option value="onderwijsplanner">Planner</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
                             <div class="form-row">
-                                <div class="form-group compact">
-                                    <label for="new-user-fte">Aanstelling (Bruto FTE)</label>
-                                    <input type="number" id="new-user-fte" placeholder="1.0" step="0.01" min="0"
-                                        max="1.5">
-                                </div>
-                                <div class="form-group compact">
-                                    <label for="new-user-inhouding">Inhouding (FTE)</label>
-                                    <input type="number" id="new-user-inhouding" placeholder="0.0" step="0.01" min="0"
-                                        max="1.5">
-                                </div>
+                                <input type="number" id="new-user-fte" placeholder="Bruto FTE" step="0.01" min="0"
+                                    max="1.5">
+                                <input type="number" id="new-user-inhouding" placeholder="Inhouding" step="0.01" min="0"
+                                    max="1.5">
+                                <input type="text" id="new-user-docenttype" placeholder="Docenttype">
+                                <button class="btn btn-primary btn-sm" onclick="createNewUser()">
+                                    <span>➕</span> Toevoegen
+                                </button>
                             </div>
-                            <div class="form-row">
-                                <input type="text" id="new-user-docenttype"
-                                    placeholder="Docenttype (bijv. AVO: Nederlands)">
-                            </div>
-                            <button class="btn btn-primary" onclick="createNewUser()">
-                                <span>➕</span> Gebruiker Toevoegen
-                            </button>
                         </div>
 
-                        <h4 style="margin-top: var(--space-lg);">Bestaande gebruikers</h4>
-                        <div id="users-list" class="users-list">
+                        <div id="users-list" class="users-list-clean">
                             <p class="empty-state">Laden...</p>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Teams + Data -->
+                    <div class="admin-side-section">
+                        <!-- Teams -->
+                        <div class="admin-card-compact">
+                            <div class="admin-section-header">
+                                <h4>🏢 Teams</h4>
+                            </div>
+                            <div class="form-row compact">
+                                <input type="text" id="new-team-name" placeholder="Team naam">
+                                <button class="btn btn-primary btn-xs" onclick="createNewTeam()">➕</button>
+                            </div>
+                            <div id="teams-list" class="teams-list-compact">
+                                <p class="empty-state small">Laden...</p>
+                            </div>
+                        </div>
+
+                        <!-- Save States -->
+                        <div class="admin-card-compact">
+                            <div class="admin-section-header">
+                                <h4>💾 States</h4>
+                            </div>
+                            <div class="form-row compact">
+                                <input type="text" id="save-state-name" placeholder="State naam">
+                                <button class="btn btn-primary btn-xs" onclick="smartSaveState()">💾</button>
+                            </div>
+                            <div id="saved-states-list" class="saved-states-list-compact">
+                                <p class="empty-state small">Geen states</p>
+                            </div>
+                        </div>
+
+                        <!-- Import/Export -->
+                        <div class="admin-card-compact">
+                            <div class="admin-section-header">
+                                <h4>📤 Data</h4>
+                            </div>
+                            <div class="admin-data-buttons">
+                                <button class="btn btn-secondary btn-xs" onclick="exportToFile()">📥 Export</button>
+                                <input type="file" id="import-file-input" accept=".json" style="display:none"
+                                    onchange="importFromFile(event)">
+                                <button class="btn btn-secondary btn-xs"
+                                    onclick="document.getElementById('import-file-input').click()">📤 Import</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -678,26 +633,11 @@
             <section class="view" id="view-docenten">
 
                 <div class="docenten-layout">
-                    <div class="card" style="border-left: 4px solid var(--accent-primary);">
-                        <div style="display: flex; gap: var(--space-md); align-items: flex-start;">
-                            <div style="font-size: 1.5rem; padding-top: 5px;">👥</div>
-                            <div>
-                                <h3 style="margin-bottom: var(--space-xs); border: none; padding: 0;">Teamleden Beheren
-                                </h3>
-                                <p style="color: var(--text-secondary); margin-bottom: var(--space-sm);">
-                                    Teamleden worden nu centraal beheerd via het <strong>Admin Paneel</strong>.
-                                </p>
-                                <p style="font-size: 0.9rem; color: var(--text-muted);">
-                                    Gebruik het admin icoon rechtsboven om gebruikers toe te voegen, aanstellingen (FTE)
-                                    te wijzigen of inhoudingen in te stellen.
-                                    Wijzigingen worden hier automatisch bijgewerkt.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="card">
-                        <h3>👥 Teamledenoverzicht</h3>
+                        <div class="section-header-with-subtitle">
+                            <h3>👥 Teamledenoverzicht</h3>
+                            <p class="admin-managed-by" id="admin-managed-by"></p>
+                        </div>
                         <div id="docenten-lijst" class="docenten-lijst">
                             <p class="empty-state">Nog geen teamleden toegevoegd.</p>
                         </div>

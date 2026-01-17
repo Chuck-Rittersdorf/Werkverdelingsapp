@@ -3499,52 +3499,78 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    padding: var(--space-xs) var(--space-md);
-    background: var(--bg-card);
+    margin-left: auto;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.user-indicator .user-name {
     font-weight: 600;
-    color: var(--text-primary);
-}
-
-.user-indicator .user-role-label {
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    background: var(--accent-primary);
-    color: white;
-    border-radius: var(--radius-full);
-}
-
-.btn-role-toggle {
-    padding: var(--space-xs) var(--space-sm);
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: var(--accent-primary);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 0.8rem;
+    border: 1.5px solid;
     transition: all 0.2s;
-    font-weight: 500;
+    cursor: default;
+    position: relative;
 }
 
-.btn-role-toggle:hover {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: var(--accent-primary);
+.user-badge::after {
+    content: '☀️';
+    position: absolute;
+    right: -8px;
+    top: -8px;
+    font-size: 0.8rem;
+    opacity: 0;
+    transform: scale(0.5) rotate(-20deg);
+    transition: all 0.3s ease;
 }
 
-.btn-role-toggle.viewing-as-teamlid {
-    background: rgba(245, 158, 11, 0.15);
-    border-color: rgba(245, 158, 11, 0.4);
-    color: #f59e0b;
+.user-badge:hover::after {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
 }
 
-.btn-role-toggle.viewing-as-teamlid:hover {
-    background: rgba(245, 158, 11, 0.25);
-    border-color: #f59e0b;
+.user-badge .user-name {
+    color: inherit;
+}
+
+.user-badge .user-role-icon {
+    font-size: 0.9rem;
+}
+
+/* Role-specific badge colors with neon glow - matching logout button teal */
+.user-badge.role-admin,
+.user-badge.role-leader,
+.user-badge.role-member {
+    background: rgba(20, 184, 166, 0.15);
+    border-color: rgba(20, 184, 166, 0.5);
+    color: #14b8a6;
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.4), 0 0 16px rgba(20, 184, 166, 0.2);
+}
+
+/* Compact logout button */
+.btn-logout-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: rgba(20, 184, 166, 0.15);
+    border: 1.5px solid rgba(20, 184, 166, 0.4);
+    color: #14b8a6;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.btn-logout-small:hover {
+    background: rgba(20, 184, 166, 0.25);
+    border-color: #14b8a6;
+    transform: scale(1.05);
 }
 
 /* Role Selection Modal */
@@ -4801,8 +4827,242 @@ body {
 
 /* ============================================
    ADMIN PANEL
-   ============================================ */
+/* Admin Styles - Clean Layout */
 
+.admin-top-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-sm) 0;
+    margin-bottom: var(--space-md);
+}
+
+.admin-layout-clean {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+    max-width: 1400px;
+}
+
+.admin-main-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--border-color);
+}
+
+.admin-side-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.admin-section-header {
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-section-header h3,
+.admin-section-header h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.admin-card-compact {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
+}
+
+.admin-form-compact {
+    margin-bottom: var(--space-lg);
+}
+
+.admin-form-compact .form-row {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+}
+
+.admin-form-compact input,
+.admin-form-compact select {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+
+.admin-form-compact input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-row.compact {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.form-row.compact input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+
+.btn-xs {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.75rem;
+}
+
+.admin-data-buttons {
+    display: flex;
+    gap: var(--space-xs);
+}
+
+.users-list-clean {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 80px 110px 50px 50px auto;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+}
+
+.user-row:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.user-row-header {
+    background: transparent;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-xs);
+}
+
+.user-row-header:hover {
+    background: transparent;
+}
+
+.user-row .afkorting {
+    font-weight: 600;
+    color: var(--accent-primary);
+}
+
+.user-row .team {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.user-row .role {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: rgba(99, 102, 241, 0.15);
+    border-radius: var(--radius-sm);
+    color: var(--accent-primary);
+    text-align: center;
+}
+
+.user-row .fte {
+    text-align: center;
+}
+
+.user-row .inhouding {
+    color: #ef4444;
+    text-align: center;
+    font-size: 0.75rem;
+}
+
+.user-row .actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.user-row .actions button {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.user-row .actions button:hover {
+    opacity: 1;
+}
+
+.teams-list-compact,
+.saved-states-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.team-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+}
+
+.team-row .team-name {
+    flex: 1;
+}
+
+.team-row .team-users {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.btn-delete-small {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.btn-delete-small:hover {
+    opacity: 1;
+}
+
+.empty-state.small {
+    font-size: 0.75rem;
+    padding: var(--space-sm);
+}
+
+/* Keep old layout for backwards compatibility */
 .admin-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -5141,6 +5401,7 @@ body {
     font-size: 0.9rem;
     min-width: 150px;
 }
+
 /* Read-only / Disabled states for RBAC */
 .leseenheid-blokje.disabled,
 .taak-item.disabled,

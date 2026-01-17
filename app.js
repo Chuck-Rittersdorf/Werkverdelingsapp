@@ -66,6 +66,15 @@ async function initFirebaseAuth() {
             // Setup team switcher for admins
             setupTeamSwitcher();
 
+            // Reset view states for new user session
+            klassenState.geselecteerdeDocent = null;
+            klassenState.geselecteerdLeerjaar = null;
+            klassenState.geselecteerdeKlas = null;
+            state.geselecteerdeDocent = null; // Verdeling tab
+            if (typeof takenViewState !== 'undefined') {
+                takenViewState.geselecteerdeDocent = null;
+            }
+
             // Render everything
             renderAll();
         } else {
@@ -279,52 +288,24 @@ function updateUserIndicator() {
 
     const displayName = currentUserProfile.afkorting || currentUserProfile.naam || currentAuthUser.email;
     const actualRole = currentUserProfile.rol;
-    const viewingAs = state.adminViewingAs || actualRole;
 
-    // Show role toggle for admins
-    let roleToggleHtml = '';
-    if (isUserAdmin()) {
-        const isViewingAsTeamlid = viewingAs === 'teamlid';
-        roleToggleHtml = `
-            <button class="btn-role-toggle ${isViewingAsTeamlid ? 'viewing-as-teamlid' : ''}" 
-                    onclick="toggleAdminView()" 
-                    title="${isViewingAsTeamlid ? 'Terug naar Admin weergave' : 'Bekijk als Teamlid'}">
-                ${isViewingAsTeamlid ? '👤 Teamlid' : '👑 Admin'}
-            </button>
-        `;
-    }
+    // Role icon only (no text label)
+    const roleIcon = actualRole === 'admin' ? '👑' :
+        (actualRole === 'teamleider' || actualRole === 'onderwijsplanner') ? '📢' : '';
 
-    const rolLabel = viewingAs === 'admin' ? '👑 Admin' :
-        viewingAs === 'teamleider' ? '📢 Teamleider' :
-            viewingAs === 'onderwijsplanner' ? '📋 Planner' : '👤 Teamlid';
+    // Role-based styling class
+    const roleClass = actualRole === 'admin' ? 'role-admin' :
+        (actualRole === 'teamleider' || actualRole === 'onderwijsplanner') ? 'role-leader' : 'role-member';
 
     indicator.innerHTML = `
-        <span class="user-name">${escapeHtml(displayName)}</span>
-        <span class="user-role-label">${rolLabel}</span>
-        ${roleToggleHtml}
+        <span class="user-badge ${roleClass}">
+            <span class="user-name">${escapeHtml(displayName)}</span>
+            ${roleIcon ? `<span class="user-role-icon">${roleIcon}</span>` : ''}
+        </span>
+        <button class="btn-logout-small" onclick="handleLogout()" title="Uitloggen">⏻</button>
     `;
 
     navTabs.appendChild(indicator);
-}
-
-// Toggle admin view between admin and teamlid
-function toggleAdminView() {
-    if (!isUserAdmin()) return;
-
-    const currentView = state.adminViewingAs || currentUserProfile.rol;
-    state.adminViewingAs = (currentView === 'teamlid') ? 'admin' : 'teamlid';
-
-    // Update the role used for visibility checks
-    if (state.adminViewingAs === 'teamlid') {
-        state.currentUser.rol = 'teamlid';
-    } else {
-        state.currentUser.rol = currentUserProfile.rol;
-    }
-
-    updateTabVisibility();
-    updateUserIndicator();
-
-    console.log('Viewing as:', state.adminViewingAs);
 }
 
 // ============================================
@@ -798,13 +779,13 @@ async function loadTeamsList() {
     if (!container) return;
 
     try {
-        const { collection, getDocs } = window.firebaseFunctions;
+        const { collection, getDocs, query, where } = window.firebaseFunctions;
         const db = window.firebaseDb;
 
         const snapshot = await getDocs(collection(db, 'teams'));
 
         if (snapshot.empty) {
-            container.innerHTML = '<p class="empty-state">Nog geen teams</p>';
+            container.innerHTML = '<p class="empty-state small">Nog geen teams</p>';
             return;
         }
 
@@ -813,30 +794,93 @@ async function loadTeamsList() {
             teams.push({ id: doc.id, ...doc.data() });
         });
 
+        // Get user counts per team
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const userCountByTeam = {};
+        usersSnapshot.forEach(doc => {
+            const teamId = doc.data().teamId;
+            if (teamId) {
+                userCountByTeam[teamId] = (userCountByTeam[teamId] || 0) + 1;
+            }
+        });
+
         container.innerHTML = teams.map(team => {
+            const userCount = userCountByTeam[team.id] || 0;
             return `
-                <div class="team-item">
-                    <span class="team-id">${escapeHtml(team.id)}</span>
+                <div class="team-row">
                     <span class="team-name">${escapeHtml(team.naam || team.id)}</span>
+                    <span class="team-users">${userCount} 👤</span>
+                    <button class="btn-delete-small" onclick="deleteTeam('${team.id}')" title="Verwijderen">🗑️</button>
                 </div>
             `;
         }).join('');
 
     } catch (error) {
         console.error('Error loading teams list:', error);
-        container.innerHTML = '<p class="empty-state">Fout bij laden</p>';
+        container.innerHTML = '<p class="empty-state small">Fout bij laden</p>';
+    }
+}
+
+// Delete team (only if no users assigned)
+async function deleteTeam(teamId) {
+    try {
+        const { collection, getDocs, doc, deleteDoc, query, where } = window.firebaseFunctions;
+        const db = window.firebaseDb;
+
+        // Check if team has users
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        let usersInTeam = 0;
+        usersSnapshot.forEach(userDoc => {
+            if (userDoc.data().teamId === teamId) {
+                usersInTeam++;
+            }
+        });
+
+        if (usersInTeam > 0) {
+            alert(`Kan team niet verwijderen: er zijn nog ${usersInTeam} gebruiker(s) gekoppeld aan dit team.\n\nVerplaats of verwijder eerst alle gebruikers van dit team.`);
+            return;
+        }
+
+        // Double confirmation for empty team
+        if (!confirm(`Weet je zeker dat je dit team wilt verwijderen?\n\nAlle teamdata (vakken, leerjaren, toewijzingen, etc.) wordt permanent verwijderd!`)) {
+            return;
+        }
+
+        if (!confirm('⚠️ LAATSTE WAARSCHUWING ⚠️\n\nDit kan niet ongedaan worden gemaakt!\n\nTyp "OK" om door te gaan.')) {
+            return;
+        }
+
+        // Delete team document
+        await deleteDoc(doc(db, 'teams', teamId));
+
+        console.log('Team deleted:', teamId);
+        alert('Team is verwijderd.');
+
+        // Reload lists
+        await loadTeamsList();
+        await loadTeamsDropdown();
+
+    } catch (error) {
+        console.error('Error deleting team:', error);
+        alert('Fout bij verwijderen: ' + error.message);
     }
 }
 
 // Create new team
 async function createNewTeam() {
-    const teamId = document.getElementById('new-team-id').value.trim().toUpperCase();
     const teamName = document.getElementById('new-team-name').value.trim();
 
-    if (!teamId) {
-        alert('Vul een Team ID in (bijv. CMD)');
+    if (!teamName) {
+        alert('Vul een teamnaam in');
         return;
     }
+
+    // Auto-generate clean ID from name (lowercase, replace spaces with dashes, remove special chars)
+    const teamId = teamName
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .substring(0, 20);
 
     try {
         const { doc, setDoc, getDoc } = window.firebaseFunctions;
@@ -845,27 +889,26 @@ async function createNewTeam() {
         // Check if team already exists
         const existingTeam = await getDoc(doc(db, 'teams', teamId));
         if (existingTeam.exists()) {
-            alert(`Team "${teamId}" bestaat al!`);
+            alert(`Team "${teamName}" bestaat al!`);
             return;
         }
 
         // Create team
         await setDoc(doc(db, 'teams', teamId), {
-            naam: teamName || teamId,
+            naam: teamName,
             createdAt: new Date().toISOString()
         });
 
-        console.log('Team created:', teamId);
+        console.log('Team created:', teamId, teamName);
 
         // Clear form
-        document.getElementById('new-team-id').value = '';
         document.getElementById('new-team-name').value = '';
 
         // Reload lists
         await loadTeamsList();
         await loadTeamsDropdown();
 
-        alert(`Team "${teamName || teamId}" is aangemaakt!`);
+        alert(`Team "${teamName}" is aangemaakt!`);
 
     } catch (error) {
         console.error('Error creating team:', error);
@@ -894,41 +937,53 @@ async function loadUsersList() {
             users.push({ id: doc.id, ...doc.data() });
         });
 
-        // Sort by name
-        users.sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
+        // Sort by 2nd letter of afkorting (then 3rd, etc.)
+        users.sort((a, b) => {
+            const afkA = (a.afkorting || a.naam || '').toLowerCase();
+            const afkB = (b.afkorting || b.naam || '').toLowerCase();
+            // Compare starting from 2nd character (index 1)
+            const sortKeyA = afkA.substring(1) + afkA.charAt(0);
+            const sortKeyB = afkB.substring(1) + afkB.charAt(0);
+            return sortKeyA.localeCompare(sortKeyB);
+        });
 
-        container.innerHTML = users.map(user => {
+        // Build header row
+        const headerRow = `
+            <div class="user-row user-row-header">
+                <span>Afkorting</span>
+                <span>Docenttype</span>
+                <span>Team</span>
+                <span>Rol</span>
+                <span>FTE</span>
+                <span>Inh.</span>
+                <span></span>
+            </div>
+        `;
+
+        container.innerHTML = headerRow + users.map(user => {
             const rolLabels = {
-                'admin': '👑 Admin',
-                'teamleider': '📢 Teamleider',
-                'onderwijsplanner': '📋 Planner',
-                'teamlid': '👤 Teamlid'
+                'admin': 'Admin',
+                'teamleider': 'Teamleider',
+                'onderwijsplanner': 'Onderwijsplanner',
+                'teamlid': 'Teamlid'
             };
-            const rolLabel = rolLabels[user.rol] || '👤 Lid';
-            const teamLabel = user.teamId || 'Geen team';
-            const fteLabel = user.FTE ? `${user.FTE} FTE` : '';
-            const docenttypeLabel = user.docenttype || '';
+            const rolLabel = rolLabels[user.rol] || 'Teamlid';
+            const teamLabel = user.teamId || '-';
+            const fteDisplay = user.aanstellingBruto || user.FTE || '-';
+            const inhDisplay = user.inhouding > 0 ? `-${user.inhouding}` : '-';
 
             return `
-                <div class="user-item">
-                    <div class="user-info">
-                        <span class="user-name-display">${escapeHtml(user.naam || user.email)}</span>
-                        <span class="user-afkorting">${escapeHtml(user.afkorting || '')}</span>
-                    </div>
-                    <div class="user-meta">
-                        <span class="user-team-badge">${escapeHtml(teamLabel)}</span>
-                        <span class="user-role-badge">${rolLabel}</span>
-                        ${fteLabel ? `<span class="user-fte-badge">${fteLabel}</span>` : ''}
-                        ${user.inhouding > 0 ? `<span class="user-role-badge" style="background:rgba(239,68,68,0.15);color:#ef4444">-${user.inhouding} inh.</span>` : ''}
-                    </div>
-                    <div class="user-details">
-                        <span class="user-email">${escapeHtml(user.email)}</span>
-                        ${docenttypeLabel ? `<span class="user-docenttype">${escapeHtml(docenttypeLabel)}</span>` : ''}
-                    </div>
-                    <div class="user-actions" style="margin-left: auto; display: flex; gap: 5px;">
-                        <button class="btn btn-sm btn-ghost" onclick="editUser('${user.id}')" title="Bewerken">✏️</button>
-                        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteUser('${user.id}')" title="Verwijderen">🗑️</button>
-                    </div>
+                <div class="user-row">
+                    <span class="afkorting">${escapeHtml(user.afkorting || '')}</span>
+                    <span class="docenttype">${escapeHtml(user.docenttype || '')}</span>
+                    <span class="team">${escapeHtml(teamLabel)}</span>
+                    <span class="role">${rolLabel}</span>
+                    <span class="fte">${fteDisplay}</span>
+                    <span class="inhouding">${inhDisplay}</span>
+                    <span class="actions">
+                        <button onclick="editUser('${user.id}')" title="Bewerken">✏️</button>
+                        <button onclick="deleteUser('${user.id}')" title="Verwijderen">🗑️</button>
+                    </span>
                 </div>
             `;
         }).join('');
@@ -1123,15 +1178,58 @@ async function saveEditUser() {
 }
 
 async function deleteUser(userId) {
-    if (!confirm('Let op! Je staat op het punt een gebruiker te verwijderen.\n\nDit verwijdert alleen de data in de database. Het inlogaccount (Auth) blijft bestaan (dit moet je apart verwijderen in de Firebase Console indien nodig).\n\nWil je doorgaan?')) {
-        return;
-    }
-
     try {
-        const { doc, deleteDoc } = window.firebaseFunctions;
+        const { doc, deleteDoc, getDoc } = window.firebaseFunctions;
         const db = window.firebaseDb;
 
+        // Get user info first
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (!userDoc.exists()) {
+            alert('Gebruiker niet gevonden');
+            return;
+        }
+        const userData = userDoc.data();
+        const userAfkorting = userData.afkorting || userData.naam || 'deze gebruiker';
+
+        // Check if user has any assignments in the team data
+        // Find docent by matching afkorting or ID
+        const hasAssignments = state.toewijzingen?.some(t =>
+            t.docentId === userId ||
+            state.docenten.find(d => d.id === t.docentId && d.afkorting === userData.afkorting)
+        );
+
+        const hasTasks = state.docentTaken?.some(dt =>
+            dt.docentId === userId ||
+            state.docenten.find(d => d.id === dt.docentId && d.afkorting === userData.afkorting)
+        );
+
+        if (hasAssignments || hasTasks) {
+            alert(`Kan "${userAfkorting}" niet verwijderen: deze gebruiker heeft nog toewijzingen (lessen of taken).\n\nVerwijder eerst alle toewijzingen van deze gebruiker.`);
+            return;
+        }
+
+        // Double confirmation
+        if (!confirm(`Weet je zeker dat je "${userAfkorting}" wilt verwijderen?\n\nDit verwijdert het profiel uit de database.`)) {
+            return;
+        }
+
+        if (!confirm('⚠️ LAATSTE WAARSCHUWING ⚠️\n\nHet inlogaccount (Auth) moet apart in de Firebase Console worden verwijderd.\n\nDoorgaan met verwijderen van het profiel?')) {
+            return;
+        }
+
+        // Delete user profile
         await deleteDoc(doc(db, 'users', userId));
+
+        // Also remove from local docenten state if present
+        const docentIndex = state.docenten.findIndex(d => d.id === userId || d.afkorting === userData.afkorting);
+        if (docentIndex >= 0) {
+            state.docenten.splice(docentIndex, 1);
+            await saveTeamDataToFirestore();
+        }
+
+        console.log('User deleted:', userId);
+        alert(`"${userAfkorting}" is verwijderd.`);
+
         await loadUsersList();
 
     } catch (err) {
@@ -1152,7 +1250,7 @@ function isUserAdmin() {
 // Check if current user can edit data (not just view)
 // Admin, teamleider, onderwijsplanner can always edit
 // Teamlid can only edit when viewing their own data
-function canUserEdit() {
+function canUserEdit(selectedDocentId = null) {
     const role = state.currentUser.rol;
 
     if (isUserAdmin() || role === 'teamleider' || role === 'onderwijsplanner') {
@@ -1163,7 +1261,12 @@ function canUserEdit() {
     if (role === 'teamlid') {
         const myDocentId = getCurrentUserDocentId();
 
-        // Check if the selected docent matches the user's docent
+        // If explicit docent ID provided, use that
+        if (selectedDocentId) {
+            return selectedDocentId === myDocentId;
+        }
+
+        // Fallback: check all possible view states
         // For klassen/lessen view
         if (typeof klassenState !== 'undefined' && klassenState.geselecteerdeDocent) {
             return klassenState.geselecteerdeDocent === myDocentId;
@@ -1172,41 +1275,38 @@ function canUserEdit() {
         if (typeof takenViewState !== 'undefined' && takenViewState.geselecteerdeDocent) {
             return takenViewState.geselecteerdeDocent === myDocentId;
         }
-        // For niveau-3 view
+        // For niveau-3/verdeling view
         if (state.geselecteerdeDocent) {
             return state.geselecteerdeDocent === myDocentId;
         }
 
-        return true; // Default to editable
+        return false; // Default: if we can't determine, don't allow edit
     }
 
-    return true; // Fallback
+    return true; // Fallback for unknown roles
 }
 
-// Find the docent ID that matches the current user (by afkorting or name)
+// Find the docent ID that matches the current user
 function getCurrentUserDocentId() {
-    if (!currentUserProfile) return null;
+    if (!currentAuthUser) return null;
 
-    const userAfkorting = currentUserProfile.afkorting?.toLowerCase();
-    const userName = currentUserProfile.naam?.toLowerCase();
+    // Direct match: docent.id === user's Auth UID (since sync uses Auth UID as docent ID)
+    const matchingDocent = state.docenten.find(d => d.id === currentAuthUser.uid);
 
-    // Try to find matching docent
-    const matchingDocent = state.docenten.find(d => {
-        const docentNaam = d.naam?.toLowerCase();
-        const docentAfkorting = d.afkorting?.toLowerCase();
+    if (matchingDocent) {
+        return matchingDocent.id;
+    }
 
-        // Match by afkorting first
-        if (userAfkorting && docentAfkorting && userAfkorting === docentAfkorting) {
-            return true;
-        }
-        // Match by name
-        if (userName && docentNaam && (userName === docentNaam || docentNaam.includes(userName))) {
-            return true;
-        }
-        return false;
-    });
+    // Fallback: try matching by afkorting (for users created before sync)
+    if (currentUserProfile?.afkorting) {
+        const userAfkorting = currentUserProfile.afkorting.toLowerCase();
+        const fallbackMatch = state.docenten.find(d =>
+            d.afkorting?.toLowerCase() === userAfkorting
+        );
+        return fallbackMatch?.id || null;
+    }
 
-    return matchingDocent?.id || null;
+    return null;
 }
 
 // Check if user is viewing their own data
@@ -1700,18 +1800,27 @@ function updateTabVisibility() {
     const role = state.currentUser.rol;
 
     // Define which tabs each role can see
-    // Admin and teamleider/onderwijsplanner see all tabs
-    // Teamlid only sees: Lessen, Taken, Dummy PvI's, Dashboard
+    // Admin: all tabs
+    // Teamleider/Onderwijsplanner: all except Admin tab
+    // Teamlid: only Lessen, Taken, Dummy PvI's, Dashboard
 
     const allTabs = document.querySelectorAll('.nav-tab[data-view]');
-    const teamlidVisibleViews = ['klassen', 'taken', 'niveau-3', 'dashboard'];
+    const teamlidVisibleViews = ['klassen', 'taken', 'verdeling', 'dashboard'];
+    const leaderVisibleViews = ['curriculum', 'docenten', 'klassen', 'taken', 'verdeling', 'takenbeheer', 'dashboard'];
 
     allTabs.forEach(tab => {
         const view = tab.getAttribute('data-view');
 
-        if (role === 'admin' || role === 'teamleider' || role === 'onderwijsplanner') {
-            // Admin, teamleider, onderwijsplanner see all tabs
+        if (role === 'admin') {
+            // Admin sees all tabs
             tab.classList.remove('role-hidden');
+        } else if (role === 'teamleider' || role === 'onderwijsplanner') {
+            // Teamleider/onderwijsplanner: all except Admin tab
+            if (view === 'admin') {
+                tab.classList.add('role-hidden');
+            } else {
+                tab.classList.remove('role-hidden');
+            }
         } else if (role === 'teamlid') {
             // Teamlid only sees specific tabs
             if (teamlidVisibleViews.includes(view)) {
@@ -1724,6 +1833,26 @@ function updateTabVisibility() {
             tab.classList.remove('role-hidden');
         }
     });
+
+    // Check if current active view is visible, if not switch to appropriate tab
+    const activeView = document.querySelector('.view.active');
+    const activeViewId = activeView?.id?.replace('view-', '');
+
+    // For teamlid, switch to Lessen if on restricted tab
+    if (role === 'teamlid' && activeViewId && !teamlidVisibleViews.includes(activeViewId)) {
+        const klassenTab = document.querySelector('[data-view="klassen"]');
+        if (klassenTab) {
+            klassenTab.click();
+        }
+    }
+
+    // For teamleider/onderwijsplanner, switch away from Admin tab
+    if ((role === 'teamleider' || role === 'onderwijsplanner') && activeViewId === 'admin') {
+        const curriculumTab = document.querySelector('[data-view="curriculum"]');
+        if (curriculumTab) {
+            curriculumTab.click();
+        }
+    }
 
     console.log('Tab visibility updated for role:', role);
 }
@@ -3288,11 +3417,44 @@ function addDocent(naam, aanstellingBruto = 1.0, inhouding = 0) {
     console.warn('Use Admin Panel to create new users/docenten');
 }
 
+// Update the "Beheerd door" text with admin names
+async function updateAdminManagedBy() {
+    const container = document.getElementById('admin-managed-by');
+    if (!container) return;
+
+    try {
+        const { collection, getDocs } = window.firebaseFunctions;
+        const db = window.firebaseDb;
+
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const admins = [];
+
+        usersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            if (userData.rol === 'admin') {
+                admins.push(userData.afkorting || userData.naam || 'Admin');
+            }
+        });
+
+        if (admins.length > 0) {
+            container.textContent = `Leden worden beheerd door: ${admins.join(', ')}`;
+        } else {
+            container.textContent = '';
+        }
+    } catch (error) {
+        console.error('Error loading admin names:', error);
+        container.textContent = '';
+    }
+}
+
 function renderDocentenLijst() {
     const container = document.getElementById('docenten-lijst');
 
+    // Update admin names in header
+    updateAdminManagedBy();
+
     if (!state.docenten || state.docenten.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nog geen teamleden toegevoegd. Ga naar Admin om gebruikers toe te voegen.</p>';
+        container.innerHTML = '<p class="empty-state">Nog geen teamleden toegevoegd.</p>';
         return;
     }
 
@@ -3376,9 +3538,39 @@ function deleteDocent(docentId) {
 
 function updateDocentSelector() {
     const selector = document.getElementById('select-docent');
-    const sortedDocenten = [...state.docenten].sort((a, b) => a.naam.substring(1).localeCompare(b.naam.substring(1)));
-    selector.innerHTML = '<option value="">-- Selecteer docent --</option>' +
-        sortedDocenten.map(d => `<option value="${d.id}">${escapeHtml(d.naam)}</option>`).join('');
+    if (!selector) return;
+
+    const sortedDocenten = [...state.docenten].sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
+
+    // Get current user's docent ID
+    const currentDocentId = getCurrentUserDocentId();
+
+    // Build options without placeholder
+    selector.innerHTML = sortedDocenten.map(d =>
+        `<option value="${d.id}">${escapeHtml(d.naam)}</option>`
+    ).join('');
+
+    // Priority: current user FIRST (if no selection yet), then preserve existing selection
+    let selectedId = null;
+
+    if (!state.geselecteerdeDocent && currentDocentId) {
+        // No selection yet: auto-select current user
+        selectedId = currentDocentId;
+    } else if (state.geselecteerdeDocent && sortedDocenten.some(d => d.id === state.geselecteerdeDocent)) {
+        // Keep existing valid selection
+        selectedId = state.geselecteerdeDocent;
+    } else if (currentDocentId) {
+        // Fallback to current user
+        selectedId = currentDocentId;
+    } else if (sortedDocenten.length > 0) {
+        // Last resort: first in list
+        selectedId = sortedDocenten[0].id;
+    }
+
+    if (selectedId) {
+        selector.value = selectedId;
+        state.geselecteerdeDocent = selectedId;
+    }
 }
 
 // Edit Docent Functions
@@ -3531,9 +3723,24 @@ function renderKlassenView() {
 
 function updateKlassenDocentSelector() {
     const selector = document.getElementById('klassen-docent');
-    const sortedDocenten = [...state.docenten].sort((a, b) => a.naam.substring(1).localeCompare(b.naam.substring(1)));
-    selector.innerHTML = '<option value="">-- Selecteer jezelf --</option>' +
-        sortedDocenten.map(d => `<option value="${d.id}" ${klassenState.geselecteerdeDocent === d.id ? 'selected' : ''}>${escapeHtml(d.naam)}</option>`).join('');
+    const sortedDocenten = [...state.docenten].sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
+
+    // Auto-select current user if no selection yet
+    const currentDocentId = getCurrentUserDocentId();
+    if (!klassenState.geselecteerdeDocent && currentDocentId) {
+        klassenState.geselecteerdeDocent = currentDocentId;
+    }
+
+    // Build options without placeholder
+    selector.innerHTML = sortedDocenten.map(d =>
+        `<option value="${d.id}" ${klassenState.geselecteerdeDocent === d.id ? 'selected' : ''}>${escapeHtml(d.naam)}</option>`
+    ).join('');
+
+    // If still nothing selected and there are docenten, select first
+    if (!klassenState.geselecteerdeDocent && sortedDocenten.length > 0) {
+        klassenState.geselecteerdeDocent = sortedDocenten[0].id;
+        selector.value = sortedDocenten[0].id;
+    }
 }
 
 function updateKlassenLeerjaarSelector() {
@@ -3872,7 +4079,7 @@ function toggleLeseenheid(blokjeId, periodeKey) {
     }
 
     // Check if user can edit (teamlid can only edit own data)
-    if (!canUserEdit()) {
+    if (!canUserEdit(klassenState.geselecteerdeDocent)) {
         alert('Je kunt alleen je eigen toewijzingen wijzigen');
         return;
     }
@@ -3905,6 +4112,13 @@ function toggleLeseenheid(blokjeId, periodeKey) {
 function toggleAllVakLeseenheden(vakId, periodeKey, selectAll) {
     if (!klassenState.geselecteerdeDocent) {
         alert('Selecteer eerst een docent');
+        return;
+    }
+
+    // Check if user can edit (teamlid can only edit own data)
+    if (!canUserEdit(klassenState.geselecteerdeDocent)) {
+        alert('Je kunt alleen je eigen toewijzingen wijzigen');
+        renderKlassenCurriculum(); // Reset checkbox state
         return;
     }
 
@@ -3990,9 +4204,25 @@ function initTakenView() {
 function updateTakenDocentSelector() {
     const selector = document.getElementById('taken-docent');
     if (!selector) return;
-    const sortedDocenten = [...state.docenten].sort((a, b) => a.naam.substring(1).localeCompare(b.naam.substring(1)));
-    selector.innerHTML = '<option value="">-- Selecteer jezelf --</option>' +
-        sortedDocenten.map(d => `<option value="${d.id}" ${takenViewState.geselecteerdeDocent === d.id ? 'selected' : ''}>${escapeHtml(d.naam)}</option>`).join('');
+
+    const sortedDocenten = [...state.docenten].sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
+
+    // Auto-select current user if no selection yet
+    const currentDocentId = getCurrentUserDocentId();
+    if (!takenViewState.geselecteerdeDocent && currentDocentId) {
+        takenViewState.geselecteerdeDocent = currentDocentId;
+    }
+
+    // Build options without placeholder
+    selector.innerHTML = sortedDocenten.map(d =>
+        `<option value="${d.id}" ${takenViewState.geselecteerdeDocent === d.id ? 'selected' : ''}>${escapeHtml(d.naam)}</option>`
+    ).join('');
+
+    // If still nothing selected and there are docenten, select first
+    if (!takenViewState.geselecteerdeDocent && sortedDocenten.length > 0) {
+        takenViewState.geselecteerdeDocent = sortedDocenten[0].id;
+        selector.value = sortedDocenten[0].id;
+    }
 }
 
 function renderTakenSelectie() {
@@ -4129,7 +4359,7 @@ function toggleTaakSelectie(taakId) {
     }
 
     // Check if user can edit (teamlid can only edit own data)
-    if (!canUserEdit()) {
+    if (!canUserEdit(takenViewState.geselecteerdeDocent)) {
         alert('Je kunt alleen je eigen taken wijzigen');
         return;
     }
@@ -6191,4 +6421,4 @@ window.deleteUser = deleteUser;
 // Admin functions
 window.switchActiveTeam = switchActiveTeam;
 window.createNewTeam = createNewTeam;
-window.toggleAdminView = toggleAdminView;
+window.deleteTeam = deleteTeam;
