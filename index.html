@@ -266,7 +266,7 @@
                         <!-- Week Info Display (Read-Only from Admin) -->
                         <div class="card info-card-compact" id="week-info-card" title="">
                             <div class="week-info-display">
-                                <span class="week-info-label">📅 Schooljaar:</span>
+                                <span class="week-info-label">Schooljaar:</span>
                                 <span class="week-info-value" id="display-schooljaar">-</span>
                                 <span class="week-info-separator">|</span>
                                 <span class="week-info-label">Basisweken:</span>
@@ -486,7 +486,7 @@
                         <!-- Week Info Display for Taken (Read-Only from Admin) -->
                         <div class="card info-card-compact" id="taken-week-info-card" title="">
                             <div class="week-info-display">
-                                <span class="week-info-label">📅 Schooljaar:</span>
+                                <span class="week-info-label">Schooljaar:</span>
                                 <span class="week-info-value" id="taken-display-schooljaar">-</span>
                                 <span class="week-info-separator">|</span>
                                 <span class="week-info-label">Periodeweken:</span>
@@ -538,8 +538,6 @@
                                 <div class="form-group checkbox-inline">
                                     <input type="checkbox" id="taak-naar-rato">
                                     <label for="taak-naar-rato">Naar rato (uren × netto FTE)</label>
-                                    <small class="form-hint">Wanneer aangevinkt worden de uren vermenigvuldigd met de
-                                        netto FTE van het teamlid</small>
                                 </div>
 
                                 <div class="form-group">
@@ -586,8 +584,6 @@
                                         <input type="checkbox" id="taak-voor-iedereen">
                                         <span>Taak voor alle teamleden</span>
                                     </label>
-                                    <small class="form-hint">Indien aangevinkt wordt deze taak automatisch aan alle
-                                        teamleden toegevoegd.</small>
                                 </div>
 
                                 <div class="form-group checkbox-group">
@@ -732,24 +728,23 @@
 
             <!-- Mijn Overzicht View -->
             <section class="view" id="view-verdeling">
-                <div class="view-header">
-                    <div class="docent-selector">
-                        <label for="select-docent">Teamlid:</label>
-                        <select id="select-docent">
-                            <option value="">-- Selecteer jezelf --</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="mijn-overzicht-layout">
                     <!-- Overview grid -->
-                    <div class="card">
-                        <h3>🎓 Onderwijs</h3>
+                    <div class="card mijn-overzicht-card">
+                        <div class="mijn-overzicht-header-row">
+                            <h3>🎓 Onderwijs</h3>
+                            <div class="docent-selector-inline">
+                                <label for="select-docent">Teamlid:</label>
+                                <select id="select-docent">
+                                    <option value="">-- Selecteer jezelf --</option>
+                                </select>
+                            </div>
+                        </div>
                         <div id="mijn-overzicht-grid" class="klassen-grid">
                             <p class="empty-state">Selecteer een docent om je overzicht te zien</p>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card mijn-overzicht-card">
                         <h3>📋 Taken</h3>
                         <div id="taken-grid" class="klassen-grid">
                             <p class="empty-state">Geen taken ingevoerd</p>
@@ -1003,8 +998,6 @@
                 <div class="form-group checkbox-inline">
                     <input type="checkbox" id="edit-taak-naar-rato">
                     <label for="edit-taak-naar-rato">Naar rato (uren × netto FTE)</label>
-                    <small class="form-hint">Wanneer aangevinkt worden de uren vermenigvuldigd met de netto FTE van het
-                        teamlid</small>
                 </div>
 
                 <div class="form-group">

@@ -5451,7 +5451,7 @@ function renderVerdelingView() {
                     ${formatVerschil(verschilTaken)}
                 </div>
                 <div class="balans-row balans-verschil-totaal">
-                    <span class="balans-label">📊 Verschil</span>
+                    <span class="balans-label ${verschilTotaal >= 0 ? 'uren-over' : 'uren-tekort'}">${verschilTotaal >= 0 ? 'Uren over' : 'Uren tekort'}</span>
                     <span class="balans-beschikbaar">${beschikbareUren.toFixed(1)}u</span>
                     <span class="balans-geselecteerd">${totaleInzet.toFixed(1)}u</span>
                     ${formatVerschil(verschilTotaal)}

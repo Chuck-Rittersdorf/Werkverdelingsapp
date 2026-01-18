@@ -2250,7 +2250,44 @@ body {
 .mijn-overzicht-layout {
     display: flex;
     flex-direction: column;
-    gap: var(--space-lg);
+    gap: var(--space-xs);
+    /* Reduced gap between sections */
+}
+
+.mijn-overzicht-card {
+    margin-bottom: 0;
+    /* Already handled by layout gap */
+}
+
+.mijn-overzicht-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.mijn-overzicht-header-row h3 {
+    margin: 0;
+}
+
+.docent-selector-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.docent-selector-inline label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.docent-selector-inline select {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
 }
 
 .mijn-stats-bar {
@@ -2415,9 +2452,18 @@ body {
     background: linear-gradient(135deg, #14b8a6, #0d9488);
 }
 
+.totaal-row.taakuren .periode-uren,
+.totaal-row.taakuren span,
+.totaal-row.taakuren .totaal-value,
+.totaal-row.taakuren .uren-totaal,
+.totaal-row.taakuren strong {
+    color: white !important;
+}
+
 /* Totale Inzet Bar */
 .totale-inzet-container {
-    margin-top: var(--space-sm);
+    margin-top: var(--space-xs);
+    /* Match section spacing */
 }
 
 .totale-inzet-row {
@@ -2557,6 +2603,15 @@ body {
     background: rgba(239, 68, 68, 0.15);
 }
 
+/* Dynamic label colors for Uren over/tekort */
+.balans-label.uren-over {
+    color: #10b981 !important;
+}
+
+.balans-label.uren-tekort {
+    color: #ef4444 !important;
+}
+
 /* Blokjes Pool */
 .blokjes-pool {
     background: var(--bg-card);
@@ -2637,9 +2692,8 @@ body {
 }
 
 .periode-header {
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-xs) var(--space-md);
     background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
     text-align: center;
 }
 
