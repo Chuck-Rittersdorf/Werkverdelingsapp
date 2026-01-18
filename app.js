@@ -3491,8 +3491,28 @@ function renderVakkenLijst() {
     container.innerHTML = leerjaarNamen.map(naam => {
         const leerjaar = state.leerjaren.find(l => l.naam === naam);
         const vakken = grouped[naam] || [];
-        const basisVakken = vakken.filter(v => v.type !== 'ontwikkelweken');
-        const owVakken = vakken.filter(v => v.type === 'ontwikkelweken');
+
+        // Sort helper: get max units per week for a vak (highest value in any period)
+        const getMaxUnitsPerWeek = (vak) => {
+            let max = 0;
+            if (vak.type !== 'ontwikkelweken' && vak.periodes) {
+                for (let p = 1; p <= 4; p++) max = Math.max(max, vak.periodes[p] || 0);
+            } else if (vak.type === 'ontwikkelweken' && vak.ontwikkelweken) {
+                for (let ow = 1; ow <= 8; ow++) max = Math.max(max, vak.ontwikkelweken[ow] || 0);
+            }
+            return max;
+        };
+
+        // Sort: most units per week first, then alphabetically
+        const sortVakken = (a, b) => {
+            const unitsA = getMaxUnitsPerWeek(a);
+            const unitsB = getMaxUnitsPerWeek(b);
+            if (unitsB !== unitsA) return unitsB - unitsA;
+            return (a.naam || '').localeCompare(b.naam || '', 'nl');
+        };
+
+        const basisVakken = vakken.filter(v => v.type !== 'ontwikkelweken').sort(sortVakken);
+        const owVakken = vakken.filter(v => v.type === 'ontwikkelweken').sort(sortVakken);
 
         // Calculate BOT uren voor basisweken: eenheden × 0.5 × weken per periode
         let basisBOT = 0;
@@ -4551,9 +4571,30 @@ function renderKlassenCurriculum() {
             const ow1 = (periode - 1) * 2 + 1;  // OW1, OW3, OW5, OW7
             const ow2 = (periode - 1) * 2 + 2;  // OW2, OW4, OW6, OW8
 
-            const basisVakkenMetPeriode = basisVakken.filter(v => (v.periodes[periode] || 0) > 0);
-            const owVakkenMetOW1 = owVakken.filter(v => (v.ontwikkelweken[ow1] || 0) > 0);
-            const owVakkenMetOW2 = owVakken.filter(v => (v.ontwikkelweken[ow2] || 0) > 0);
+            const basisVakkenMetPeriode = basisVakken
+                .filter(v => (v.periodes[periode] || 0) > 0)
+                .sort((a, b) => {
+                    const unitsA = a.periodes[periode] || 0;
+                    const unitsB = b.periodes[periode] || 0;
+                    if (unitsB !== unitsA) return unitsB - unitsA; // Most units first
+                    return (a.naam || '').localeCompare(b.naam || '', 'nl'); // Alphabetically
+                });
+            const owVakkenMetOW1 = owVakken
+                .filter(v => (v.ontwikkelweken[ow1] || 0) > 0)
+                .sort((a, b) => {
+                    const unitsA = a.ontwikkelweken[ow1] || 0;
+                    const unitsB = b.ontwikkelweken[ow1] || 0;
+                    if (unitsB !== unitsA) return unitsB - unitsA;
+                    return (a.naam || '').localeCompare(b.naam || '', 'nl');
+                });
+            const owVakkenMetOW2 = owVakken
+                .filter(v => (v.ontwikkelweken[ow2] || 0) > 0)
+                .sort((a, b) => {
+                    const unitsA = a.ontwikkelweken[ow2] || 0;
+                    const unitsB = b.ontwikkelweken[ow2] || 0;
+                    if (unitsB !== unitsA) return unitsB - unitsA;
+                    return (a.naam || '').localeCompare(b.naam || '', 'nl');
+                });
             // Calculate lesuren per class/vak for this period (for the selected docent) - ALL LEERJAREN
             const lesuurPerKlasVak = {};
 
@@ -4908,6 +4949,14 @@ function initTakenView() {
         takenViewState.geselecteerdeDocent = docentSelect.value || null;
         renderTakenSelectie();
     });
+
+    // Search input listener
+    const searchInput = document.getElementById('taken-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            renderTakenSelectie();
+        });
+    }
 }
 
 function updateTakenDocentSelector() {
@@ -4949,8 +4998,23 @@ function renderTakenSelectie() {
         container.innerHTML = '<p class="empty-state">Nog geen taken aangemaakt in Takenbeheer</p>';
         return;
     }
+
+    // Get search query
+    const searchInput = document.getElementById('taken-search');
+    const searchQuery = (searchInput?.value || '').toLowerCase().trim();
+
+    // Filter and sort tasks
+    const filteredTaken = state.taken.filter(taak =>
+        searchQuery === '' || (taak.naam || '').toLowerCase().includes(searchQuery)
+    );
+
+    if (filteredTaken.length === 0) {
+        container.innerHTML = '<p class="empty-state">Geen taken gevonden voor "' + escapeHtml(searchQuery) + '"</p>';
+        return;
+    }
+
     // Sort tasks alphabetically
-    const sortedTaken = [...state.taken].sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
+    const sortedTaken = [...filteredTaken].sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
     container.innerHTML = sortedTaken.map(taak => {
         const totaalUren = Object.values(taak.urenPerPeriode).reduce((a, b) => a + b, 0);
@@ -5788,6 +5852,12 @@ function switchDashboardNiveau(niveau) {
         takenProgressContainer.style.display = niveau === 2 ? 'flex' : 'none';
     }
 
+    // Show/hide filter dropdowns (only visible on Lessen tab)
+    const filtersContainer = document.querySelector('.dashboard-filters');
+    if (filtersContainer) {
+        filtersContainer.style.display = niveau === 1 ? 'flex' : 'none';
+    }
+
     // Render the appropriate niveau
     switch (niveau) {
         case 1:
@@ -6438,11 +6508,12 @@ function renderDashboardLessen() {
 
         const leerjaarVakken = state.vakken.filter(v => v.leerjaar === leerjaar.naam);
 
-        // Calculate leerjaar percentage
-        const leerjaarStats = calculateLeerjaarProgress(leerjaar.naam, klassen, leerjaarVakken);
-        const leerjaarPct = leerjaarStats.total > 0 ? Math.round((leerjaarStats.selected / leerjaarStats.total) * 100) : 0;
+        // Calculate leerjaar percentage (UNFILTERED - always show total for the year)
+        const allKlassen = leerjaar.klassen || [];
+        const unfilteredStats = calculateUnfilteredLeerjaarProgress(leerjaar.naam, allKlassen, leerjaarVakken);
+        const leerjaarPct = unfilteredStats.total > 0 ? Math.round((unfilteredStats.selected / unfilteredStats.total) * 100) : 0;
 
-        // Calculate periode percentages
+        // Calculate periode percentages (filtered)
         const periodePcts = [1, 2, 3, 4].map(p => {
             const stats = calculatePeriodeProgress(leerjaar.naam, klassen, leerjaarVakken, p);
             return stats.total > 0 ? Math.round((stats.selected / stats.total) * 100) : 0;
@@ -6451,7 +6522,7 @@ function renderDashboardLessen() {
         return `
             <div class="lessen-leerjaar-section ${isGodseye ? 'lessen-godseye' : ''}">
                 <div class="lessen-leerjaar-header">
-                    <span class="lessen-leerjaar-naam">🎓 ${escapeHtml(leerjaar.naam)}</span>
+                    <span class="lessen-leerjaar-naam">🎓 ${escapeHtml(leerjaar.naam)} <span class="lessen-progress-badge" style="margin-left: 0.5rem">${leerjaarPct}%</span></span>
                     <div class="lessen-klas-summary">
                         ${klassen.map(klas => {
             const klasStats = calculateKlasProgress(leerjaar.naam, klas, leerjaarVakken);
@@ -6459,7 +6530,6 @@ function renderDashboardLessen() {
             return `<span class="lessen-klas-summary-item">${klas} <span class="lessen-klas-summary-pct">${klasPct}%</span></span>`;
         }).join('')}
                     </div>
-                    <span class="lessen-progress-badge">${leerjaarPct}%</span>
                 </div>
                 <div class="lessen-table">
                     <div class="lessen-table-header">
@@ -6553,8 +6623,8 @@ function updateOverallProgressBar() {
     progressBar.style.backgroundColor = color;
 }
 
-// Calculate progress for entire leerjaar
-function calculateLeerjaarProgress(leerjaarNaam, klassen, vakken) {
+// Calculate progress for entire leerjaar (UNFILTERED - ignores weektype/vak filters)
+function calculateUnfilteredLeerjaarProgress(leerjaarNaam, klassen, vakken) {
     let total = 0;
     let selected = 0;
 
@@ -6587,6 +6657,51 @@ function calculateLeerjaarProgress(leerjaarNaam, klassen, vakken) {
     return { total, selected };
 }
 
+// Calculate progress for entire leerjaar (FILTERED)
+function calculateLeerjaarProgress(leerjaarNaam, klassen, vakken) {
+    let total = 0;
+    let selected = 0;
+
+    // Get filter values from dashboard state
+    const selectedWeektype = dashboardState.selectedWeektype || 'alle';
+    const selectedVak = dashboardState.selectedVak || 'alle';
+
+    klassen.forEach(klas => {
+        vakken.forEach(vak => {
+            // Skip if vak filter is applied and doesn't match
+            if (selectedVak !== 'alle' && vak.id !== selectedVak) return;
+
+            // Basisweken (P1-P4) - only if weektype is 'alle' or 'basis'
+            [1, 2, 3, 4].forEach(periode => {
+                if (selectedWeektype === 'alle' || selectedWeektype === 'basis') {
+                    const eenheden = vak.periodes?.[periode] || 0;
+                    for (let i = 1; i <= eenheden; i++) {
+                        total++;
+                        const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
+                        if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                    }
+                }
+
+                // OW for this periode - only if weektype is 'alle' or 'ow'
+                if (selectedWeektype === 'alle' || selectedWeektype === 'ow') {
+                    const ow1 = (periode - 1) * 2 + 1;
+                    const ow2 = (periode - 1) * 2 + 2;
+                    [ow1, ow2].forEach(owNum => {
+                        const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                        for (let i = 1; i <= owEenheden; i++) {
+                            total++;
+                            const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                            if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    return { total, selected };
+}
+
 // Calculate progress for a specific periode across all klassen
 function calculatePeriodeProgress(leerjaarNaam, klassen, vakken, periode) {
     let total = 0;
@@ -6595,25 +6710,36 @@ function calculatePeriodeProgress(leerjaarNaam, klassen, vakken, periode) {
     const ow1 = (periode - 1) * 2 + 1;
     const ow2 = (periode - 1) * 2 + 2;
 
+    // Get filter values from dashboard state
+    const selectedWeektype = dashboardState.selectedWeektype || 'alle';
+    const selectedVak = dashboardState.selectedVak || 'alle';
+
     klassen.forEach(klas => {
         vakken.forEach(vak => {
-            // Basisweken
-            const eenheden = vak.periodes?.[periode] || 0;
-            for (let i = 1; i <= eenheden; i++) {
-                total++;
-                const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
-                if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
-            }
+            // Skip if vak filter is applied and doesn't match
+            if (selectedVak !== 'alle' && vak.id !== selectedVak) return;
 
-            // OW
-            [ow1, ow2].forEach(owNum => {
-                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
-                for (let i = 1; i <= owEenheden; i++) {
+            // Basisweken (only if weektype is 'alle' or 'basis')
+            if (selectedWeektype === 'alle' || selectedWeektype === 'basis') {
+                const eenheden = vak.periodes?.[periode] || 0;
+                for (let i = 1; i <= eenheden; i++) {
                     total++;
-                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
                     if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
                 }
-            });
+            }
+
+            // OW (only if weektype is 'alle' or 'ow')
+            if (selectedWeektype === 'alle' || selectedWeektype === 'ow') {
+                [ow1, ow2].forEach(owNum => {
+                    const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                    for (let i = 1; i <= owEenheden; i++) {
+                        total++;
+                        const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                        if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                    }
+                });
+            }
         });
     });
 
@@ -6625,27 +6751,38 @@ function calculateKlasProgress(leerjaarNaam, klas, vakken) {
     let total = 0;
     let selected = 0;
 
-    vakken.forEach(vak => {
-        [1, 2, 3, 4].forEach(periode => {
-            // Basisweken
-            const eenheden = vak.periodes?.[periode] || 0;
-            for (let i = 1; i <= eenheden; i++) {
-                total++;
-                const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
-                if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
-            }
+    // Get filter values from dashboard state
+    const selectedWeektype = dashboardState.selectedWeektype || 'alle';
+    const selectedVak = dashboardState.selectedVak || 'alle';
 
-            // OW
-            const ow1 = (periode - 1) * 2 + 1;
-            const ow2 = (periode - 1) * 2 + 2;
-            [ow1, ow2].forEach(owNum => {
-                const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
-                for (let i = 1; i <= owEenheden; i++) {
+    vakken.forEach(vak => {
+        // Skip if vak filter is applied and doesn't match
+        if (selectedVak !== 'alle' && vak.id !== selectedVak) return;
+
+        [1, 2, 3, 4].forEach(periode => {
+            // Basisweken (only if weektype is 'alle' or 'basis')
+            if (selectedWeektype === 'alle' || selectedWeektype === 'basis') {
+                const eenheden = vak.periodes?.[periode] || 0;
+                for (let i = 1; i <= eenheden; i++) {
                     total++;
-                    const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                    const blokjeId = `${vak.id}-${klas}-P${periode}-${i}`;
                     if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
                 }
-            });
+            }
+
+            // OW (only if weektype is 'alle' or 'ow')
+            if (selectedWeektype === 'alle' || selectedWeektype === 'ow') {
+                const ow1 = (periode - 1) * 2 + 1;
+                const ow2 = (periode - 1) * 2 + 2;
+                [ow1, ow2].forEach(owNum => {
+                    const owEenheden = vak.ontwikkelweken?.[owNum] || 0;
+                    for (let i = 1; i <= owEenheden; i++) {
+                        total++;
+                        const blokjeId = `${vak.id}-${klas}-OW${owNum}-${i}`;
+                        if (state.toewijzingen.find(t => t.blokjeId === blokjeId)) selected++;
+                    }
+                });
+            }
         });
     });
 

@@ -3655,7 +3655,7 @@ body {
     box-shadow: 0 0 8px rgba(251, 191, 36, 0.35), 0 0 16px rgba(251, 191, 36, 0.15);
 }
 
-/* Compact logout button - gold/yellow */
+/* Compact logout button - green (logged in) / red on hover */
 .btn-logout-small {
     display: flex;
     align-items: center;
@@ -3663,20 +3663,22 @@ body {
     width: 32px;
     height: 32px;
     padding: 0;
-    background: rgba(251, 191, 36, 0.12);
-    border: 1.5px solid rgba(251, 191, 36, 0.5);
-    color: #fbbf24;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1.5px solid rgba(34, 197, 94, 0.5);
+    color: #22c55e;
     border-radius: var(--radius-full);
     cursor: pointer;
     font-size: 1rem;
     transition: all 0.2s;
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.3), 0 0 12px rgba(251, 191, 36, 0.15);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3), 0 0 12px rgba(34, 197, 94, 0.15);
 }
 
 .btn-logout-small:hover {
-    background: rgba(251, 191, 36, 0.2);
-    border-color: #fbbf24;
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
     transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3), 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
 /* Role Selection Modal */
