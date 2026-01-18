@@ -4021,6 +4021,11 @@ async function updateAdminManagedBy() {
 async function renderDocentenLijst() {
     const container = document.getElementById('docenten-lijst');
 
+    // Don't try to fetch if not authenticated
+    if (!currentAuthUser) {
+        return;
+    }
+
     // Fetch admins for managed-by tooltip
     let adminNames = '';
     try {
