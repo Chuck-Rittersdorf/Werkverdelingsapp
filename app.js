@@ -248,6 +248,12 @@ async function handleLogout() {
         const { signOut } = window.firebaseFunctions;
         const auth = window.firebaseAuth;
 
+        // Unsubscribe from team data listener before signing out
+        if (teamDataUnsubscribe) {
+            teamDataUnsubscribe();
+            teamDataUnsubscribe = null;
+        }
+
         await signOut(auth);
         // onAuthStateChanged will handle the rest
 
