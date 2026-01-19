@@ -1287,6 +1287,46 @@
         </div>
     </div>
 
+    <!-- Duplicate Team Modal -->
+    <div id="duplicate-team-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop" onclick="closeDuplicateTeamModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📑 Team dupliceren</h3>
+                <button type="button" class="modal-close" onclick="closeDuplicateTeamModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="duplicate-team-source-id">
+                <div class="modal-form-row">
+                    <label>Bron team</label>
+                    <span id="duplicate-team-source-name" class="form-value-display"></span>
+                </div>
+                <div class="modal-form-row">
+                    <label for="duplicate-team-name">Nieuwe teamnaam</label>
+                    <input type="text" id="duplicate-team-name" placeholder="Nieuwe teamnaam">
+                </div>
+                <div class="modal-form-row">
+                    <label for="duplicate-team-schooljaar">Schooljaar</label>
+                    <select id="duplicate-team-schooljaar">
+                        <option value="">-- Selecteer schooljaar --</option>
+                    </select>
+                </div>
+                <div class="modal-form-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="duplicate-team-include-toewijzingen">
+                        <span>Inclusief toewijzingen (lessen & taken selecties)</span>
+                    </label>
+                    <small class="form-hint">Wanneer uitgevinkt krijgt het nieuwe team een schone start, alleen de
+                        structuur (leerjaren, klassen, vakken, taken) wordt overgenomen.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeDuplicateTeamModal()">Annuleren</button>
+                <button type="button" class="btn btn-primary" onclick="executeDuplicateTeam()">📑 Dupliceren</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div id="login-modal" class="modal" style="display: none;">
         <div class="modal-backdrop"></div>

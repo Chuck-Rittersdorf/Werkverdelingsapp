@@ -5199,7 +5199,7 @@ body {
 
 .user-row {
     display: grid;
-    grid-template-columns: 70px 1fr 70px 100px 45px 45px 60px;
+    grid-template-columns: 70px 1fr 70px 100px 45px 45px 80px 60px;
     gap: var(--space-xs);
     align-items: center;
     padding: var(--space-xs) var(--space-sm);
@@ -5256,6 +5256,47 @@ body {
     color: #ef4444;
     text-align: center;
     font-size: 0.75rem;
+}
+
+/* Last seen styling */
+.last-seen-cell {
+    font-size: 0.7rem;
+}
+
+.last-seen {
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.65rem;
+    white-space: nowrap;
+}
+
+.last-seen.online {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.last-seen.recent {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.last-seen.today {
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-secondary);
+}
+
+.last-seen.week {
+    color: var(--text-muted);
+}
+
+.last-seen.old {
+    color: #ef4444;
+    opacity: 0.8;
+}
+
+.last-seen.never {
+    color: var(--text-muted);
+    font-style: italic;
 }
 
 .user-row .actions {

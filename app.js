@@ -120,6 +120,16 @@ async function fetchUserProfile(userId) {
                 state.teamId = currentUserProfile.teamId || 'default-team';
             }
 
+            // Update lastSeen timestamp
+            try {
+                const { updateDoc } = window.firebaseFunctions;
+                await updateDoc(doc(db, 'users', userId), {
+                    lastSeen: new Date().toISOString()
+                });
+            } catch (e) {
+                console.warn('Could not update lastSeen:', e);
+            }
+
             console.log('User profile loaded:', currentUserProfile);
         } else {
             console.warn('No user profile found in Firestore');
@@ -1148,12 +1158,11 @@ async function loadTeamsList() {
             const schooljaarDisplay = schooljaarId ? `'${schooljaarId}` : '';
             return `
                 <div class="team-row">
-                    <span class="team-name">${escapeHtml(team.naam || team.id)}</span>
-                    <span class="team-schooljaar">${schooljaarDisplay}</span>
+                    <span class="team-name">${escapeHtml(team.naam || team.id)} ${schooljaarDisplay}</span>
                     <span class="team-users">${userCount} 👤</span>
                     <span class="team-actions">
-                        <button class="btn-icon-small" onclick="editTeamSettings('${team.id}')" title="Schooljaar wijzigen">⚙️</button>
-                        <button class="btn-icon-small" onclick="duplicateTeam('${team.id}')" title="Dupliceren">📋</button>
+                        <button class="btn-icon-small" onclick="editTeamSettings('${team.id}')" title="Wijzigen">✏️</button>
+                        <button class="btn-icon-small" onclick="duplicateTeam('${team.id}')" title="Dupliceren">📑</button>
                         <button class="btn-icon-small btn-danger-icon" onclick="deleteTeam('${team.id}')" title="Verwijderen">🗑️</button>
                     </span>
                 </div>
@@ -1294,7 +1303,7 @@ async function saveEditTeam() {
 // Duplicate team to new school year
 async function duplicateTeam(teamId) {
     try {
-        const { doc, getDoc, setDoc } = window.firebaseFunctions;
+        const { doc, getDoc } = window.firebaseFunctions;
         const db = window.firebaseDb;
 
         const teamDoc = await getDoc(doc(db, 'teams', teamId));
@@ -1304,11 +1313,76 @@ async function duplicateTeam(teamId) {
         }
 
         const team = teamDoc.data();
-        const newSchooljaar = prompt(`Nieuw schooljaar voor kopie van "${team.naam}":`, '');
-        if (!newSchooljaar) return;
 
-        const newTeamName = prompt('Naam voor het nieuwe team:', `${team.naam} ${newSchooljaar}`);
-        if (!newTeamName) return;
+        // Store source team info
+        document.getElementById('duplicate-team-source-id').value = teamId;
+        document.getElementById('duplicate-team-source-name').textContent = team.naam || teamId;
+
+        // Suggest new name
+        document.getElementById('duplicate-team-name').value = team.naam || teamId;
+
+        // Populate schooljaar dropdown
+        const schooljaarSelect = document.getElementById('duplicate-team-schooljaar');
+        schooljaarSelect.innerHTML = '<option value="">-- Selecteer schooljaar --</option>';
+
+        const { collection, getDocs } = window.firebaseFunctions;
+        const schooljarenSnapshot = await getDocs(collection(db, 'schooljaren'));
+        const schooljaren = [];
+        schooljarenSnapshot.forEach(doc => {
+            schooljaren.push({ id: doc.id, ...doc.data() });
+        });
+        schooljaren.sort((a, b) => (b.naam || b.id).localeCompare(a.naam || a.id));
+
+        schooljaren.forEach(sj => {
+            const option = document.createElement('option');
+            option.value = sj.id;
+            option.textContent = sj.naam || sj.id;
+            schooljaarSelect.appendChild(option);
+        });
+
+        // Reset checkbox
+        document.getElementById('duplicate-team-include-toewijzingen').checked = false;
+
+        // Show modal
+        document.getElementById('duplicate-team-modal').style.display = 'flex';
+
+    } catch (error) {
+        console.error('Error opening duplicate modal:', error);
+        alert('Fout bij openen: ' + error.message);
+    }
+}
+
+function closeDuplicateTeamModal() {
+    document.getElementById('duplicate-team-modal').style.display = 'none';
+}
+
+async function executeDuplicateTeam() {
+    try {
+        const { doc, getDoc, setDoc } = window.firebaseFunctions;
+        const db = window.firebaseDb;
+
+        const sourceTeamId = document.getElementById('duplicate-team-source-id').value;
+        const newTeamName = document.getElementById('duplicate-team-name').value.trim();
+        const newSchooljaar = document.getElementById('duplicate-team-schooljaar').value;
+        const includeToewijzingen = document.getElementById('duplicate-team-include-toewijzingen').checked;
+
+        if (!newTeamName) {
+            alert('Vul een teamnaam in');
+            return;
+        }
+
+        if (!newSchooljaar) {
+            alert('Selecteer een schooljaar');
+            return;
+        }
+
+        // Get source team data
+        const sourceTeamDoc = await getDoc(doc(db, 'teams', sourceTeamId));
+        if (!sourceTeamDoc.exists()) {
+            alert('Bron team niet gevonden');
+            return;
+        }
+        const sourceTeam = sourceTeamDoc.data();
 
         // Generate new team ID
         const newTeamId = newTeamName
@@ -1320,28 +1394,67 @@ async function duplicateTeam(teamId) {
         // Check if new team already exists
         const existingTeam = await getDoc(doc(db, 'teams', newTeamId));
         if (existingTeam.exists()) {
-            alert(`Team "${newTeamName}" bestaat al!`);
+            alert(`Team met ID "${newTeamId}" bestaat al! Kies een andere naam.`);
             return;
         }
 
         // Copy team data
         const newTeamData = {
-            ...team,
+            ...sourceTeam,
             naam: newTeamName,
+            schooljaarId: newSchooljaar,
             schooljaar: newSchooljaar,
             createdAt: new Date().toISOString(),
-            duplicatedFrom: teamId
+            duplicatedFrom: sourceTeamId
         };
 
-        // Optionally reset toewijzingen
-        if (confirm('Wil je de toewijzingen (lessen/taken) resetten voor het nieuwe team?\n\nJa = Schone start (alleen structuur behouden)\nNee = Alles kopiëren inclusief toewijzingen')) {
+        // Reset toewijzingen if not included
+        if (!includeToewijzingen) {
             newTeamData.toewijzingen = [];
             newTeamData.docentTaken = [];
+        } else {
+            // Filter toewijzingen to only include existing team members
+            const { collection, getDocs, query, where } = window.firebaseFunctions;
+
+            // Get all users that belong to the source team
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const validTeamMemberIds = new Set();
+            usersSnapshot.forEach(userDoc => {
+                const userData = userDoc.data();
+                if (userData.teamId === sourceTeamId) {
+                    validTeamMemberIds.add(userDoc.id);
+                }
+            });
+
+            // Filter toewijzingen - only keep those with valid team members
+            if (sourceTeam.toewijzingen && Array.isArray(sourceTeam.toewijzingen)) {
+                newTeamData.toewijzingen = sourceTeam.toewijzingen.filter(t => {
+                    return t.docentId && validTeamMemberIds.has(t.docentId);
+                });
+            }
+
+            // Filter docentTaken - only keep those with valid team members
+            if (sourceTeam.docentTaken && Array.isArray(sourceTeam.docentTaken)) {
+                newTeamData.docentTaken = sourceTeam.docentTaken.filter(dt => {
+                    return dt.docentId && validTeamMemberIds.has(dt.docentId);
+                });
+            }
+
+            // Log how many were filtered
+            const originalToewijzingen = (sourceTeam.toewijzingen || []).length;
+            const keptToewijzingen = (newTeamData.toewijzingen || []).length;
+            const originalDocentTaken = (sourceTeam.docentTaken || []).length;
+            const keptDocentTaken = (newTeamData.docentTaken || []).length;
+
+            if (originalToewijzingen !== keptToewijzingen || originalDocentTaken !== keptDocentTaken) {
+                console.log(`Toewijzingen gefilterd: ${originalToewijzingen} -> ${keptToewijzingen}, DocentTaken: ${originalDocentTaken} -> ${keptDocentTaken}`);
+            }
         }
 
         await setDoc(doc(db, 'teams', newTeamId), newTeamData);
 
-        alert(`Team "${newTeamName}" is aangemaakt als kopie van "${team.naam}"!`);
+        closeDuplicateTeamModal();
+        alert(`Team "${newTeamName}" is aangemaakt als kopie van "${sourceTeam.naam}"!`);
         await loadTeamsList();
         await loadTeamsDropdown();
 
@@ -1451,9 +1564,41 @@ async function loadUsersList() {
                 <span>Rol</span>
                 <span>FTE</span>
                 <span>Inh.</span>
+                <span>Laatst gezien</span>
                 <span></span>
             </div>
         `;
+
+        // Helper function to format lastSeen
+        const formatLastSeen = (lastSeenStr) => {
+            if (!lastSeenStr) return '<span class="last-seen never">Nooit</span>';
+
+            const lastSeen = new Date(lastSeenStr);
+            const now = new Date();
+            const diffMs = now - lastSeen;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            let text, cssClass;
+            if (diffMins < 5) {
+                text = 'Nu online';
+                cssClass = 'online';
+            } else if (diffMins < 60) {
+                text = `${diffMins} min`;
+                cssClass = 'recent';
+            } else if (diffHours < 24) {
+                text = `${diffHours} uur`;
+                cssClass = 'today';
+            } else if (diffDays < 7) {
+                text = `${diffDays} dag${diffDays > 1 ? 'en' : ''}`;
+                cssClass = 'week';
+            } else {
+                text = lastSeen.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+                cssClass = 'old';
+            }
+            return `<span class="last-seen ${cssClass}">${text}</span>`;
+        };
 
         container.innerHTML = headerRow + users.map(user => {
             const rolLabels = {
@@ -1466,6 +1611,7 @@ async function loadUsersList() {
             const teamLabel = user.teamId || '-';
             const fteDisplay = user.aanstellingBruto || user.FTE || '-';
             const inhDisplay = user.inhouding > 0 ? `-${user.inhouding}` : '-';
+            const lastSeenDisplay = formatLastSeen(user.lastSeen);
 
             return `
                 <div class="user-row">
@@ -1475,6 +1621,7 @@ async function loadUsersList() {
                     <span class="role">${rolLabel}</span>
                     <span class="fte">${fteDisplay}</span>
                     <span class="inhouding">${inhDisplay}</span>
+                    <span class="last-seen-cell">${lastSeenDisplay}</span>
                     <span class="actions">
                         <button onclick="editUser('${user.id}')" title="Bewerken">✏️</button>
                         <button onclick="deleteUser('${user.id}')" title="Verwijderen">🗑️</button>
@@ -7491,3 +7638,5 @@ window.saveEditSchooljaar = saveEditSchooljaar;
 // Team modal functions
 window.closeEditTeamModal = closeEditTeamModal;
 window.saveEditTeam = saveEditTeam;
+window.closeDuplicateTeamModal = closeDuplicateTeamModal;
+window.executeDuplicateTeam = executeDuplicateTeam;
