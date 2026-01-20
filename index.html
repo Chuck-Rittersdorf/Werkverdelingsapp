@@ -142,7 +142,11 @@
                         <div class="admin-form-compact">
                             <div class="form-row">
                                 <input type="text" id="new-user-afkorting" placeholder="Afkorting">
-                                <input type="password" id="new-user-password" placeholder="Wachtwoord">
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="new-user-password" placeholder="Wachtwoord">
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility()"
+                                        title="Toon/verberg wachtwoord">👁️</button>
+                                </div>
                                 <select id="new-user-team">
                                     <option value="">Team</option>
                                 </select>

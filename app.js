@@ -1609,8 +1609,13 @@ async function loadUsersList() {
             };
             const rolLabel = rolLabels[user.rol] || 'Teamlid';
             const teamLabel = user.teamId || '-';
-            const fteDisplay = user.aanstellingBruto || user.FTE || '-';
-            const inhDisplay = user.inhouding > 0 ? `-${user.inhouding}` : '-';
+
+            // Calculate netto FTE and display with necessary decimals
+            const bruto = parseFloat(user.aanstellingBruto) || parseFloat(user.FTE) || 0;
+            const inhouding = parseFloat(user.inhouding) || 0;
+            const nettoFte = bruto - inhouding;
+            const fteDisplay = bruto > 0 ? parseFloat(nettoFte.toFixed(4)).toString() : '-';
+            const inhDisplay = inhouding > 0 ? `-${parseFloat(inhouding.toFixed(4))}` : '-';
             const lastSeenDisplay = formatLastSeen(user.lastSeen);
 
             return `
@@ -1701,14 +1706,10 @@ async function createNewUser() {
         document.getElementById('new-user-inhouding').value = '';
         document.getElementById('new-user-docenttype').value = '';
 
-        // Reload users list
-        await loadUsersList();
-
-        alert(`Gebruiker "${afkorting}" is aangemaakt!\n\nLet op: je bent nu uitgelogd. Log opnieuw in met je eigen account.`);
-
-        // Sign out the new user (we're now logged in as them)
+        // Sign out the new user (we're now logged in as them) and show login modal
         const { signOut } = window.firebaseFunctions;
         await signOut(auth);
+        showLoginModal();
 
     } catch (error) {
         console.error('Error creating user:', error);
@@ -2819,21 +2820,12 @@ function updateLeerjaarSelector() {
 function initBasisweken() {
     const vakFormCard = document.querySelector('#form-vak')?.closest('.form-card');
 
-    // Function to update vak form state
+    // Function to update vak form state - no longer blocking since basisweken come from schooljaar settings
     function updateVakFormState() {
+        // Basisweken are now managed via Admin page (schooljaar), so vak form is always enabled
         if (vakFormCard) {
-            if (state.basiswekenOpgeslagen) {
-                vakFormCard.classList.remove('disabled-form');
-                vakFormCard.querySelector('.disabled-overlay')?.remove();
-            } else {
-                vakFormCard.classList.add('disabled-form');
-                if (!vakFormCard.querySelector('.disabled-overlay')) {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'disabled-overlay';
-                    overlay.innerHTML = '<p>⚠️ Stel eerst de basisweken in</p>';
-                    vakFormCard.appendChild(overlay);
-                }
-            }
+            vakFormCard.classList.remove('disabled-form');
+            vakFormCard.querySelector('.disabled-overlay')?.remove();
         }
     }
 
@@ -6948,10 +6940,26 @@ function renderLessenKlasRow(klas, leerjaarNaam, klasPct) {
     // Get vak filter from dashboard state
     const selectedVak = dashboardState.selectedVak || 'alle';
 
-    // Get vakken for this leerjaar, sorted alphabetically, filtered by selected vak
+    // Helper: get max units per week for a vak (highest value in any period)
+    const getMaxUnitsPerWeek = (vak) => {
+        let max = 0;
+        if (vak.type !== 'ontwikkelweken' && vak.periodes) {
+            for (let p = 1; p <= 4; p++) max = Math.max(max, vak.periodes[p] || 0);
+        } else if (vak.type === 'ontwikkelweken' && vak.ontwikkelweken) {
+            for (let ow = 1; ow <= 8; ow++) max = Math.max(max, vak.ontwikkelweken[ow] || 0);
+        }
+        return max;
+    };
+
+    // Get vakken for this leerjaar, sorted by most units first, then alphabetically (same as lessenbeheer)
     let leerjaarVakken = state.vakken
         .filter(v => v.leerjaar === leerjaarNaam)
-        .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
+        .sort((a, b) => {
+            const unitsA = getMaxUnitsPerWeek(a);
+            const unitsB = getMaxUnitsPerWeek(b);
+            if (unitsB !== unitsA) return unitsB - unitsA;
+            return (a.naam || '').localeCompare(b.naam || '', 'nl');
+        });
 
     // Apply vak filter
     if (selectedVak !== 'alle') {
@@ -7620,6 +7628,20 @@ window.editUser = editUser;
 window.closeEditUserModal = closeEditUserModal;
 window.saveEditUser = saveEditUser;
 window.deleteUser = deleteUser;
+
+// Password visibility toggle
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('new-user-password');
+    const toggleBtn = document.querySelector('.password-toggle');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+    }
+}
+window.togglePasswordVisibility = togglePasswordVisibility;
 
 // Admin functions
 window.switchActiveTeam = switchActiveTeam;

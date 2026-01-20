@@ -5161,6 +5161,33 @@ body {
     color: var(--text-muted);
 }
 
+/* Password input with visibility toggle */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper input {
+    padding-right: 36px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.password-toggle:hover {
+    opacity: 1;
+}
+
 .form-row.compact {
     display: flex;
     gap: var(--space-xs);
